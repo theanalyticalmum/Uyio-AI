@@ -307,9 +307,9 @@ export function generateInsights(sessions: Session[]): string[] {
   })
 
   if (recentSessions.length >= 5) {
-    insights.push('Excellent practice frequency! You're building strong communication habits.')
+    insights.push("Excellent practice frequency! You're building strong communication habits.")
   } else if (recentSessions.length < 2 && sessions.length > 5) {
-    insights.push('Try to practice more consistently. Even 90 seconds daily makes a difference!')
+    insights.push("Try to practice more consistently. Even 90 seconds daily makes a difference!")
   }
 
   return insights.length > 0 ? insights : ['Keep practicing to unlock insights about your progress!']
