@@ -1,7 +1,10 @@
 // src/lib/db/sessions.ts
 import { createClient } from '@/lib/supabase/client'
+import { withErrorHandling, withRetry, NotFoundError, PermissionError } from './errors'
+import { incrementSessionCount } from './profiles'
 import type { FeedbackResult } from '@/types/feedback'
 import type { Scenario } from '@/types/scenario'
+import type { SessionDB, SessionInput, SessionStats, MetricAverages } from '@/types/database'
 
 export interface Session {
   id: string
@@ -36,6 +39,15 @@ export interface Session {
   scenario?: Scenario
 }
 
+interface GetSessionsOptions {
+  limit?: number
+  offset?: number
+  dateFrom?: Date
+  dateTo?: Date
+  scenarioType?: string
+  goal?: string
+}
+
 export interface SaveSessionData {
   user_id: string
   scenario_id: string
@@ -47,14 +59,45 @@ export interface SaveSessionData {
 }
 
 /**
- * Save a practice session to the database
- * @param data Session data including feedback
- * @returns Session ID
+ * Create a new session
+ */
+export async function createSession(input: SessionInput): Promise<Session> {
+  return withRetry(async () => {
+    const supabase = createClient()
+
+    const sessionData = {
+      ...input,
+      is_guest: input.is_guest || false,
+      meta: input.meta || {
+        device: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+        app_version: '1.0.0',
+      },
+    }
+
+    const { data, error } = await supabase
+      .from('sessions')
+      .insert(sessionData)
+      .select('*')
+      .single()
+
+    if (error) {
+      throw new Error(`Failed to create session: ${error.message}`)
+    }
+
+    // Update user stats
+    if (!input.is_guest) {
+      await incrementSessionCount(input.user_id)
+    }
+
+    return data as Session
+  })
+}
+
+/**
+ * Save a practice session (legacy compatibility)
  */
 export async function saveSession(data: SaveSessionData): Promise<string> {
-  const supabase = createClient()
-
-  const sessionData = {
+  const session = await createSession({
     user_id: data.user_id,
     scenario_id: data.scenario_id,
     audio_url: data.audio_url,
@@ -64,26 +107,8 @@ export async function saveSession(data: SaveSessionData): Promise<string> {
     coach_summary: data.feedback.summary,
     coaching_tips: data.feedback.coaching,
     detected_metrics: data.feedback.detectedMetrics,
-    is_daily_challenge: data.is_daily_challenge || false,
-    meta: {
-      device: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
-      app_version: '1.0.0',
-    },
-  }
-
-  const { data: session, error } = await supabase
-    .from('sessions')
-    .insert(sessionData)
-    .select('id')
-    .single()
-
-  if (error) {
-    console.error('Error saving session:', error)
-    throw new Error(`Failed to save session: ${error.message}`)
-  }
-
-  // Update user's total sessions count and streak
-  await updateUserStats(data.user_id)
+    is_daily_challenge: data.is_daily_challenge,
+  })
 
   return session.id
 }
@@ -114,78 +139,161 @@ export async function getSession(sessionId: string): Promise<Session | null> {
 }
 
 /**
- * Get user's recent practice sessions
- * @param userId User ID
- * @param limit Number of sessions to fetch
- * @returns Array of sessions
+ * Get user's sessions with advanced filtering
  */
-export async function getUserRecentSessions(userId: string, limit: number = 5): Promise<Session[]> {
-  const supabase = createClient()
+export async function getUserSessions(
+  userId: string,
+  options: GetSessionsOptions = {}
+): Promise<Session[]> {
+  return withErrorHandling(async () => {
+    const supabase = createClient()
+    const {
+      limit = 20,
+      offset = 0,
+      dateFrom,
+      dateTo,
+      scenarioType,
+      goal,
+    } = options
 
-  const { data, error } = await supabase
-    .from('sessions')
-    .select(`
-      *,
-      scenario:scenarios(*)
-    `)
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(limit)
+    let query = supabase
+      .from('sessions')
+      .select(`
+        *,
+        scenario:scenarios(*)
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
 
-  if (error) {
-    console.error('Error fetching recent sessions:', error)
-    return []
-  }
+    // Apply filters
+    if (dateFrom) {
+      query = query.gte('created_at', dateFrom.toISOString())
+    }
+    if (dateTo) {
+      query = query.lte('created_at', dateTo.toISOString())
+    }
 
-  return (data as Session[]) || []
+    // Pagination
+    query = query.range(offset, offset + limit - 1)
+
+    const { data, error } = await query
+
+    if (error) {
+      throw new Error(`Failed to fetch sessions: ${error.message}`)
+    }
+
+    // Filter by scenario properties (client-side for now)
+    let sessions = (data as Session[]) || []
+
+    if (scenarioType) {
+      sessions = sessions.filter((s) => s.scenario?.context === scenarioType)
+    }
+    if (goal) {
+      sessions = sessions.filter((s) => s.scenario?.goal === goal)
+    }
+
+    return sessions
+  }, 'getUserSessions')
 }
 
 /**
- * Get user's session statistics
- * @param userId User ID
- * @returns Statistics object
+ * Get user's recent practice sessions
+ */
+export async function getUserRecentSessions(userId: string, limit: number = 5): Promise<Session[]> {
+  return getUserSessions(userId, { limit })
+}
+
+/**
+ * Get detailed session statistics
+ */
+export async function getSessionStats(userId: string): Promise<SessionStats> {
+  return withErrorHandling(async () => {
+    const sessions = await getUserSessions(userId, { limit: 1000 })
+
+    if (sessions.length === 0) {
+      return {
+        total_sessions: 0,
+        total_time: 0,
+        average_scores: {
+          clarity: 0,
+          confidence: 0,
+          logic: 0,
+          pacing: 0,
+          fillers: 0,
+          overall: 0,
+        },
+        sessions_by_day: {},
+        sessions_by_context: {},
+      }
+    }
+
+    // Calculate totals
+    const totalTime = sessions.reduce((sum, s) => sum + s.duration_sec, 0)
+
+    // Calculate averages
+    const scoreSum = sessions.reduce(
+      (acc, s) => ({
+        clarity: acc.clarity + s.scores.clarity,
+        confidence: acc.confidence + s.scores.confidence,
+        logic: acc.logic + s.scores.logic,
+        pacing: acc.pacing + s.scores.pacing,
+        fillers: acc.fillers + s.scores.fillers,
+      }),
+      { clarity: 0, confidence: 0, logic: 0, pacing: 0, fillers: 0 }
+    )
+
+    const avgScores = {
+      clarity: Math.round((scoreSum.clarity / sessions.length) * 10) / 10,
+      confidence: Math.round((scoreSum.confidence / sessions.length) * 10) / 10,
+      logic: Math.round((scoreSum.logic / sessions.length) * 10) / 10,
+      pacing: Math.round((scoreSum.pacing / sessions.length) * 10) / 10,
+      fillers: Math.round((scoreSum.fillers / sessions.length) * 10) / 10,
+      overall: 0,
+    }
+    avgScores.overall =
+      Math.round(
+        ((avgScores.clarity + avgScores.confidence + avgScores.logic + avgScores.pacing + avgScores.fillers) / 5) * 10
+      ) / 10
+
+    // Sessions by day
+    const sessionsByDay: Record<string, number> = {}
+    sessions.forEach((s) => {
+      const day = new Date(s.created_at).toLocaleDateString('en-US', { weekday: 'short' })
+      sessionsByDay[day] = (sessionsByDay[day] || 0) + 1
+    })
+
+    // Sessions by context
+    const sessionsByContext: Record<string, number> = {}
+    sessions.forEach((s) => {
+      const context = s.scenario?.context || 'unknown'
+      sessionsByContext[context] = (sessionsByContext[context] || 0) + 1
+    })
+
+    return {
+      total_sessions: sessions.length,
+      total_time: totalTime,
+      average_scores: avgScores,
+      sessions_by_day: sessionsByDay,
+      sessions_by_context: sessionsByContext,
+    }
+  }, 'getSessionStats')
+}
+
+/**
+ * Legacy function for compatibility
  */
 export async function getUserSessionStats(userId: string) {
-  const supabase = createClient()
+  const stats = await getSessionStats(userId)
 
-  const { data, error } = await supabase
-    .from('sessions')
-    .select('scores, created_at')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+  const sessions = await getUserSessions(userId, { limit: 1000 })
+  const allScores = sessions.map(
+    (s) => (s.scores.clarity + s.scores.confidence + s.scores.logic + s.scores.pacing + s.scores.fillers) / 5
+  )
+  const bestScore = allScores.length > 0 ? Math.max(...allScores) : 0
 
-  if (error || !data) {
-    return {
-      totalSessions: 0,
-      averageScore: 0,
-      bestScore: 0,
-      recentImprovement: 0,
-    }
-  }
-
-  const totalSessions = data.length
-
-  if (totalSessions === 0) {
-    return {
-      totalSessions: 0,
-      averageScore: 0,
-      bestScore: 0,
-      recentImprovement: 0,
-    }
-  }
-
-  // Calculate average of all scores
-  const allScores = data.map((session) => {
-    const scores = session.scores as any
-    return (scores.clarity + scores.confidence + scores.logic + scores.pacing + scores.fillers) / 5
-  })
-
-  const averageScore = allScores.reduce((a, b) => a + b, 0) / allScores.length
-  const bestScore = Math.max(...allScores)
-
-  // Calculate improvement (last 5 sessions vs previous 5)
+  // Calculate improvement
   let recentImprovement = 0
-  if (totalSessions >= 10) {
+  if (sessions.length >= 10) {
     const recent = allScores.slice(0, 5)
     const previous = allScores.slice(5, 10)
     const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length
@@ -194,35 +302,64 @@ export async function getUserSessionStats(userId: string) {
   }
 
   return {
-    totalSessions,
-    averageScore: Math.round(averageScore * 10) / 10,
+    totalSessions: stats.total_sessions,
+    averageScore: stats.average_scores.overall,
     bestScore: Math.round(bestScore * 10) / 10,
     recentImprovement: Math.round(recentImprovement),
   }
 }
 
 /**
- * Update user statistics after a session
- * @param userId User ID
+ * Delete a session
  */
-async function updateUserStats(userId: string) {
-  const supabase = createClient()
+export async function deleteSession(sessionId: string, userId: string): Promise<boolean> {
+  return withRetry(async () => {
+    const supabase = createClient()
 
-  // Get total sessions count
-  const { count } = await supabase
-    .from('sessions')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
+    // Verify ownership
+    const session = await getSession(sessionId)
+    if (!session) {
+      throw new NotFoundError('Session', sessionId)
+    }
+    if (session.user_id !== userId) {
+      throw new PermissionError('delete', 'session')
+    }
 
-  // Update profile with new count
-  await supabase
-    .from('profiles')
-    .update({
-      total_sessions: count || 0,
-      last_practice_date: new Date().toISOString().split('T')[0],
-    })
-    .eq('id', userId)
+    const { error } = await supabase.from('sessions').delete().eq('id', sessionId)
 
-  // TODO: Implement streak calculation
+    if (error) {
+      throw new Error(`Failed to delete session: ${error.message}`)
+    }
+
+    // TODO: Clean up audio file from storage
+
+    return true
+  })
+}
+
+/**
+ * Get guest sessions
+ */
+export async function getGuestSessions(guestId: string): Promise<Session[]> {
+  return withErrorHandling(async () => {
+    const supabase = createClient()
+
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+
+    const { data, error } = await supabase
+      .from('sessions')
+      .select('*, scenario:scenarios(*)')
+      .eq('guest_id', guestId)
+      .eq('is_guest', true)
+      .gte('created_at', yesterday.toISOString())
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      throw new Error(`Failed to fetch guest sessions: ${error.message}`)
+    }
+
+    return (data as Session[]) || []
+  }, 'getGuestSessions')
 }
 
