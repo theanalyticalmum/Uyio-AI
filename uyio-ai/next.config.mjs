@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Skip static generation for pages with dynamic content
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
+  },
   async headers() {
     return [
       // Security headers for all routes

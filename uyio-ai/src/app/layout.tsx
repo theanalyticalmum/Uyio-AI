@@ -15,7 +15,6 @@ export const metadata: Metadata = {
   keywords: ['communication', 'public speaking', 'AI coach', 'practice', 'confidence', 'clarity'],
   authors: [{ name: 'Uyio AI' }],
   creator: 'Uyio AI',
-  themeColor: '#3B82F6',
   openGraph: {
     type: 'website',
     locale: 'en_US',
