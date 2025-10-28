@@ -279,12 +279,27 @@ export default function PracticePage() {
               {/* Feedback Display */}
               {feedback && (
                 <div className="mb-6 space-y-4">
-                  {/* Overall Score */}
+                  {/* Overall Score - Prominent */}
+                  <div className="text-center p-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg">
+                    <p className="text-sm text-white/80 mb-2">Your Overall Score</p>
+                    <div className="text-6xl font-bold text-white mb-2">
+                      {((feedback.scores.clarity + feedback.scores.confidence + feedback.scores.logic + feedback.scores.pacing + feedback.scores.fillers) / 5).toFixed(1)}/10
+                    </div>
+                    <p className="text-white/90 text-lg font-medium">
+                      {((feedback.scores.clarity + feedback.scores.confidence + feedback.scores.logic + feedback.scores.pacing + feedback.scores.fillers) / 5) >= 8 
+                        ? "Excellent! 🌟" 
+                        : ((feedback.scores.clarity + feedback.scores.confidence + feedback.scores.logic + feedback.scores.pacing + feedback.scores.fillers) / 5) >= 6 
+                          ? "Great job! 👏" 
+                          : "Good effort! 💪"}
+                    </p>
+                  </div>
+
+                  {/* AI Summary */}
                   <div className="text-center p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                     <div className="flex items-center justify-center gap-2 mb-2">
                       <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                       <h4 className="text-lg font-bold text-gray-900 dark:text-white">
-                        Overall Feedback
+                        AI Coach Feedback
                       </h4>
                     </div>
                     <p className="text-gray-700 dark:text-gray-300">{feedback.summary}</p>
@@ -304,9 +319,10 @@ export default function PracticePage() {
                     ))}
                   </div>
 
-                  {/* Coaching Tips Preview */}
-                  <div className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                    💡 View detailed coaching tips and improvement plan
+                  {/* Score Explanation */}
+                  <div className="text-xs text-gray-500 dark:text-gray-400 text-center space-y-1">
+                    <p>💡 Scores are quality ratings (10 = perfect, 0 = needs major improvement)</p>
+                    <p>🚫 Fillers {feedback.scores.fillers}/10 = You had ~{feedback.detectedMetrics.fillerCount} filler words ({feedback.detectedMetrics.fillerCount < 5 ? 'excellent' : feedback.detectedMetrics.fillerCount < 10 ? 'good' : 'could improve'})</p>
                   </div>
                 </div>
               )}
