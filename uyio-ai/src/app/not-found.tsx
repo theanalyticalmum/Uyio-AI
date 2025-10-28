@@ -13,7 +13,7 @@ export default function NotFound() {
         </h2>
         
         <p className="text-gray-600 dark:text-gray-400 mb-8">
-          Oops! The page you're looking for doesn't exist. Let's get you back on track.
+          Oops! The page you&apos;re looking for doesn&apos;t exist. Let&apos;s get you back on track.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

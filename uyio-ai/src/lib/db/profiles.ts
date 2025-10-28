@@ -197,7 +197,7 @@ export async function getProfileStats(userId: string): Promise<ProfileStats> {
       }
     })
     const mostPracticedGoal = Object.entries(goalCounts).reduce(
-      (max, [goal, count]) => (count > max.count ? { goal, count } : max),
+      (max, [goal, count]) => (count > max.count ? { goal: goal as Goal, count } : max),
       { goal: null as Goal | null, count: 0 }
     ).goal
 

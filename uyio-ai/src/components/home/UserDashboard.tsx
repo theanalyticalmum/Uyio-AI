@@ -11,16 +11,7 @@ import { StatsCard } from './StatsCard'
 import { DailyChallengeCard } from './DailyChallengeCard'
 import { RecentSessionCard } from './RecentSessionCard'
 import type { Scenario } from '@/types/scenario'
-
-interface ProfileData {
-  id: string
-  email: string
-  full_name: string | null
-  total_sessions: number
-  streak_count: number
-  best_score: number | null
-  created_at: string
-}
+import type { Profile } from '@/types/database'
 
 interface SessionData {
   id: string
@@ -40,7 +31,7 @@ interface SessionData {
 
 export function UserDashboard() {
   const router = useRouter()
-  const [profile, setProfile] = useState<ProfileData | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
   const [sessions, setSessions] = useState<SessionData[]>([])
   const [dailyScenario, setDailyScenario] = useState<Scenario | null>(null)
   const [loading, setLoading] = useState(true)
@@ -58,11 +49,13 @@ export function UserDashboard() {
         }
 
         // Load all data in parallel
-        const [profileData, sessionsData, scenario] = await Promise.all([
+        const [profileData, sessionsData] = await Promise.all([
           getProfile(user.id),
           getUserRecentSessions(user.id, 5),
-          getDailyChallenge(user.id)
         ])
+
+        // Generate daily challenge based on user's goal
+        const scenario = getDailyChallenge(profileData?.primary_goal)
 
         setProfile(profileData)
         setSessions(sessionsData || [])
@@ -143,7 +136,7 @@ export function UserDashboard() {
 
   const averageScore = calculateAverageScore()
   const bestScore = calculateBestScore()
-  const firstName = profile.full_name?.split(' ')[0] || 'there'
+  const firstName = profile.display_name?.split(' ')[0] || 'there'
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

@@ -48,7 +48,7 @@ export default function LoginPage() {
                 We sent you a magic link. Click it to sign in instantly.
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-500">
-                Didn't receive it?{' '}
+                Didn&apos;t receive it?{' '}
                 <button onClick={() => setSent(false)} className="text-blue-500 hover:text-blue-600 font-medium">
                   Try again
                 </button>
@@ -73,7 +73,7 @@ export default function LoginPage() {
 
         {/* Footer note */}
         <p className="text-center text-sm text-gray-500 dark:text-gray-500 mt-6">
-          We'll email you a magic link for a password-free sign in.
+          We&apos;ll email you a magic link for a password-free sign in.
         </p>
       </div>
     </div>

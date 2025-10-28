@@ -147,7 +147,7 @@ export default function SignupPage() {
           </p>
           {isGuestConverting && guestSessionCount > 0 && (
             <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
-              🎉 You've already completed {guestSessionCount} session{guestSessionCount !== 1 ? 's' : ''}!
+              🎉 You&apos;ve already completed {guestSessionCount} session{guestSessionCount !== 1 ? 's' : ''}!
             </p>
           )}
         </div>
@@ -194,7 +194,7 @@ export default function SignupPage() {
               {/* Goal Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  What's your primary goal?
+                  What&apos;s your primary goal?
                 </label>
                 <div className="space-y-3">
                   {GOALS.map((goal) => (

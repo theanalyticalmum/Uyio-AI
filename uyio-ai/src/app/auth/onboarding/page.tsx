@@ -87,7 +87,7 @@ export default function OnboardingPage() {
       <div className="w-full max-w-2xl">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Welcome to Uyio AI! 🎉</h1>
-          <p className="text-gray-600 dark:text-gray-400">Let's personalize your experience</p>
+          <p className="text-gray-600 dark:text-gray-400">Let&apos;s personalize your experience</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8">
@@ -111,7 +111,7 @@ export default function OnboardingPage() {
             {/* Goal Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                What's your primary goal?
+                What&apos;s your primary goal?
               </label>
               <div className="space-y-3">
                 {GOALS.map((goal) => (

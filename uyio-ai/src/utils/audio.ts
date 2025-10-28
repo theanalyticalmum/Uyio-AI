@@ -48,7 +48,7 @@ export function validateAudioFile(file: File): {
   }
 
   // Check file type
-  if (!STORAGE_CONFIG.ALLOWED_AUDIO_TYPES.includes(file.type)) {
+  if (!STORAGE_CONFIG.ALLOWED_AUDIO_TYPES.includes(file.type as any)) {
     return {
       valid: false,
       error: `Invalid audio format: ${file.type}. Supported formats: ${STORAGE_CONFIG.ALLOWED_AUDIO_TYPES.join(', ')}`,

@@ -3,6 +3,8 @@ import { getDailyChallenge } from '@/lib/scenarios/generator'
 import { createClient } from '@/lib/supabase/server'
 import type { Goal } from '@/types/scenario'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)

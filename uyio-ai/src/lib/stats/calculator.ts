@@ -136,7 +136,7 @@ export function calculateStreak(sessions: Session[]): StreakData {
   const lastPracticeDate = sortedSessions[0].created_at.split('T')[0]
 
   // Get unique practice dates
-  const practiceDates = [...new Set(sortedSessions.map((s) => s.created_at.split('T')[0]))].sort().reverse()
+  const practiceDates = Array.from(new Set(sortedSessions.map((s) => s.created_at.split('T')[0]))).sort().reverse()
 
   // Calculate current streak
   let currentStreak = 0

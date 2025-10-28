@@ -103,4 +103,24 @@ You provide constructive, encouraging feedback that helps people improve their s
 You are specific, actionable, and always supportive while being honest about areas to improve.
 You respond ONLY with valid JSON in the exact format requested.`
 
+/**
+ * List of common filler words to detect and highlight
+ */
+export const FILLER_WORDS = [
+  'um',
+  'uh',
+  'like',
+  'you know',
+  'so',
+  'basically',
+  'actually',
+  'literally',
+  'right',
+  'okay',
+  'well',
+  'i mean',
+  'kind of',
+  'sort of',
+]
+
 

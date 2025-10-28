@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import type { Scenario } from '@/types/scenario'
 
 export interface UserStats {
   currentStreak: number
@@ -71,7 +72,7 @@ export async function getUserStats(userId: string): Promise<UserStats> {
 /**
  * Get today's daily challenge
  */
-export async function getDailyChallenge(userId: string): Promise<DailyChallenge | null> {
+export async function getDailyChallenge(userId: string): Promise<Scenario | null> {
   const supabase = await createClient()
 
   // Get user's goal for personalization
@@ -110,23 +111,11 @@ export async function getDailyChallenge(userId: string): Promise<DailyChallenge 
         for_date: today,
       })
 
-      return {
-        id: scenario.id,
-        promptText: scenario.prompt_text,
-        difficulty: scenario.difficulty,
-        context: scenario.context,
-        goal: scenario.goal,
-      }
+      return scenario as Scenario
     }
   } else {
     const scenario = (dailyScenario as any).scenarios
-    return {
-      id: scenario.id,
-      promptText: scenario.prompt_text,
-      difficulty: scenario.difficulty,
-      context: scenario.context,
-      goal: scenario.goal,
-    }
+    return scenario as Scenario
   }
 
   return null

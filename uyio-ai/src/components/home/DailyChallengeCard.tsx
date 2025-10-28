@@ -83,7 +83,7 @@ export function DailyChallengeCard({ scenario, completed, loading }: DailyChalle
         </h4>
 
         <p className="text-white/90 mb-4 line-clamp-2">
-          {scenario.description}
+          {scenario.prompt_text}
         </p>
 
         <div className="flex items-center gap-4 text-sm text-white/80 mb-6">
