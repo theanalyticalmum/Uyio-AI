@@ -3,9 +3,29 @@ import { createActionClient } from '@/lib/supabase/server'
 import { uploadAudio } from '@/lib/storage/audio'
 import { validateAudioFile } from '@/utils/audio'
 import { UPLOAD_ERRORS } from '@/lib/storage/config'
+import { moderateRateLimit, getIdentifier, formatResetTime } from '@/lib/rateLimit'
 
 export async function POST(request: Request) {
   try {
+    // 🔒 Rate limiting: 20 requests per minute per IP (more generous for uploads)
+    const identifier = getIdentifier(request)
+    const rateLimitResult = await moderateRateLimit.check(identifier)
+    
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { 
+          error: `Too many upload requests. Please try again in ${formatResetTime(rateLimitResult.reset)}.`,
+          retryAfter: rateLimitResult.reset,
+        },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+          },
+        }
+      )
+    }
+
     // Get form data
     const formData = await request.formData()
     const audioFile = formData.get('audio') as File

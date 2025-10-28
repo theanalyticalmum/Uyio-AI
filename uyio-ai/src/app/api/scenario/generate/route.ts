@@ -1,9 +1,29 @@
 import { NextResponse } from 'next/server'
 import { generateScenario } from '@/lib/scenarios/generator'
 import type { Goal, Context, Difficulty } from '@/types/scenario'
+import { generousRateLimit, getIdentifier, formatResetTime } from '@/lib/rateLimit'
 
 export async function POST(request: Request) {
   try {
+    // 🔒 Rate limiting: 60 requests per minute per IP (generous, low cost operation)
+    const identifier = getIdentifier(request)
+    const rateLimitResult = await generousRateLimit.check(identifier)
+    
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { 
+          error: `Too many requests. Please try again in ${formatResetTime(rateLimitResult.reset)}.`,
+          retryAfter: rateLimitResult.reset,
+        },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+          },
+        }
+      )
+    }
+
     const body = await request.json()
     const { goal, context, difficulty } = body
 

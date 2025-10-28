@@ -1,9 +1,29 @@
 import { NextResponse } from 'next/server'
 import { analyzeTranscript, calculateOverallScore } from '@/lib/openai/analyze'
 import { createActionClient } from '@/lib/supabase/server'
+import { strictRateLimit, getIdentifier, formatResetTime } from '@/lib/rateLimit'
 
 export async function POST(request: Request) {
   try {
+    // 🔒 Rate limiting: 10 requests per minute per IP
+    const identifier = getIdentifier(request)
+    const rateLimitResult = await strictRateLimit.check(identifier)
+    
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { 
+          error: `Too many requests. Please try again in ${formatResetTime(rateLimitResult.reset)}.`,
+          retryAfter: rateLimitResult.reset,
+        },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+          },
+        }
+      )
+    }
+
     const body = await request.json()
     const { transcript, scenarioId, duration } = body
 
