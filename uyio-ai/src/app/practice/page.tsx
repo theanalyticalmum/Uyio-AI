@@ -127,7 +127,22 @@ export default function PracticePage() {
       setProcessingState('complete')
       toast.success('Analysis complete!')
       
-      // TODO: Navigate to feedback page or show feedback inline
+      // Store feedback data in sessionStorage for the feedback page
+      const feedbackData = {
+        feedback: data.feedback,
+        transcript: transcriptText,
+        audioUrl: audioUrl!,
+        scenarioId: scenario?.id || '',
+        duration: audioBlob ? Math.round(audioBlob.size / 1000) : 0, // Rough estimate
+        isDailyChallenge: searchParams.get('daily') === 'true',
+      }
+      
+      sessionStorage.setItem('feedbackData', JSON.stringify(feedbackData))
+      
+      // Navigate to feedback page after a short delay
+      setTimeout(() => {
+        router.push('/practice/feedback')
+      }, 1000)
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to analyze transcript'
       setError(errorMsg)

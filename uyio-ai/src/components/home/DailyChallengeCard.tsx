@@ -1,79 +1,82 @@
+// src/components/home/DailyChallengeCard.tsx
 'use client'
 
-import Link from 'next/link'
-import { Badge } from '../common/Badge'
-import { Clock, Target } from 'lucide-react'
-import type { DailyChallenge } from '@/lib/api/dashboard'
+import { Sparkles, Clock, Target } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import type { Scenario } from '@/types/scenario'
 
 interface DailyChallengeCardProps {
-  challenge: DailyChallenge | null
-  loading?: boolean
+  scenario: Scenario | null
+  completed?: boolean
 }
 
-export function DailyChallengeCard({ challenge, loading }: DailyChallengeCardProps) {
-  if (loading) {
+export function DailyChallengeCard({ scenario, completed = false }: DailyChallengeCardProps) {
+  const router = useRouter()
+
+  if (!scenario) {
     return (
-      <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-6 sm:p-8 text-white animate-pulse">
-        <div className="h-6 w-32 bg-white/20 rounded mb-4" />
-        <div className="h-4 w-full bg-white/20 rounded mb-2" />
-        <div className="h-4 w-3/4 bg-white/20 rounded mb-6" />
-        <div className="h-12 w-full bg-white/30 rounded-lg" />
+      <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="w-6 h-6" />
+          <h3 className="text-xl font-bold">Daily Challenge</h3>
+        </div>
+        <p className="text-blue-100 mb-4">Loading today's challenge...</p>
       </div>
     )
   }
 
-  if (!challenge) {
-    return (
-      <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-6 sm:p-8 text-center">
-        <p className="text-gray-600 dark:text-gray-400">No challenge available today</p>
-      </div>
-    )
-  }
-
-  const difficultyColors = {
-    easy: 'success',
-    medium: 'warning',
-    hard: 'default',
-  } as const
-
-  const contextIcons = {
-    work: '💼',
-    social: '👥',
-    everyday: '🗣️',
-  }
+  const difficultyColor = {
+    easy: 'bg-green-500',
+    medium: 'bg-yellow-500',
+    hard: 'bg-red-500',
+  }[scenario.difficulty]
 
   return (
-    <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-6 sm:p-8 text-white shadow-lg hover:shadow-xl transition-shadow">
+    <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-2xl font-bold flex items-center gap-2">
-          <Target className="w-6 h-6" />
-          Daily Challenge
-        </h3>
-        <div className="flex items-center gap-2 text-sm">
-          <Clock className="w-4 h-4" />
-          <span>2 min</span>
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-6 h-6" />
+          <h3 className="text-xl font-bold">Daily Challenge</h3>
+        </div>
+        {completed && (
+          <span className="px-3 py-1 bg-green-500 rounded-full text-sm font-semibold">
+            ✓ Completed
+          </span>
+        )}
+      </div>
+
+      <div className="space-y-3 mb-6">
+        <p className="text-lg font-medium leading-relaxed">{scenario.prompt_text}</p>
+        <div className="flex items-center gap-4 text-sm text-blue-100">
+          <div className="flex items-center gap-1">
+            <Clock className="w-4 h-4" />
+            <span>{scenario.time_limit_sec}s</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Target className="w-4 h-4" />
+            <span className="capitalize">{scenario.goal}</span>
+          </div>
+          <span className={`px-2 py-0.5 ${difficultyColor} rounded text-white text-xs font-semibold`}>
+            {scenario.difficulty.toUpperCase()}
+          </span>
         </div>
       </div>
 
-      <div className="mb-4 flex items-center gap-2">
-        <Badge variant={difficultyColors[challenge.difficulty]} size="sm">
-          {challenge.difficulty.charAt(0).toUpperCase() + challenge.difficulty.slice(1)}
-        </Badge>
-        <Badge variant="default" size="sm">
-          {contextIcons[challenge.context]} {challenge.context.charAt(0).toUpperCase() + challenge.context.slice(1)}
-        </Badge>
-      </div>
-
-      <p className="text-white/90 mb-6 line-clamp-2">{challenge.promptText}</p>
-
-      <Link
-        href={`/practice?challenge=${challenge.id}`}
-        className="block w-full py-3 px-6 bg-white text-blue-600 font-semibold rounded-lg text-center hover:bg-blue-50 transition-colors"
-      >
-        Start Challenge
-      </Link>
+      {!completed ? (
+        <button
+          onClick={() => router.push(`/practice?scenario=${scenario.id}&daily=true`)}
+          className="w-full bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg font-semibold transition-colors"
+        >
+          Start Daily Challenge
+        </button>
+      ) : (
+        <button
+          onClick={() => router.push('/progress')}
+          className="w-full bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-lg font-semibold transition-colors backdrop-blur-sm"
+        >
+          View Results
+        </button>
+      )}
     </div>
   )
 }
-
-

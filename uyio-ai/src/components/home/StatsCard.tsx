@@ -1,88 +1,48 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
+// src/components/home/StatsCard.tsx
+import { LucideIcon } from 'lucide-react'
 
 interface StatsCardProps {
+  icon: LucideIcon
   label: string
-  value: number | string
-  icon: string
-  trend?: 'up' | 'down' | 'neutral'
-  color?: string
-  suffix?: string
-  animate?: boolean
+  value: string | number
+  trend?: {
+    value: number
+    isPositive: boolean
+  }
+  color?: 'blue' | 'green' | 'purple' | 'orange'
 }
 
-export function StatsCard({
-  label,
-  value,
-  icon,
-  trend,
-  color = 'blue',
-  suffix = '',
-  animate = true,
-}: StatsCardProps) {
-  const [displayValue, setDisplayValue] = useState(0)
-
-  useEffect(() => {
-    if (!animate || typeof value !== 'number') {
-      setDisplayValue(value as number)
-      return
-    }
-
-    let start = 0
-    const end = value as number
-    const duration = 1000
-    const increment = end / (duration / 16)
-
-    const timer = setInterval(() => {
-      start += increment
-      if (start >= end) {
-        setDisplayValue(end)
-        clearInterval(timer)
-      } else {
-        setDisplayValue(Math.floor(start))
-      }
-    }, 16)
-
-    return () => clearInterval(timer)
-  }, [value, animate])
-
+export function StatsCard({ icon: Icon, label, value, trend, color = 'blue' }: StatsCardProps) {
   const colorClasses = {
-    blue: 'text-blue-500 bg-blue-100 dark:bg-blue-900/30',
-    green: 'text-green-500 bg-green-100 dark:bg-green-900/30',
-    amber: 'text-amber-500 bg-amber-100 dark:bg-amber-900/30',
-    purple: 'text-purple-500 bg-purple-100 dark:bg-purple-900/30',
-  }
-
-  const trendIcons = {
-    up: <TrendingUp className="w-4 h-4 text-green-500" />,
-    down: <TrendingDown className="w-4 h-4 text-red-500" />,
-    neutral: <Minus className="w-4 h-4 text-gray-400" />,
+    blue: 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400',
+    green: 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400',
+    purple: 'bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400',
+    orange: 'bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400',
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-1">
-      <div className="flex items-start justify-between mb-3">
-        <div
-          className={`w-10 h-10 rounded-lg flex items-center justify-center text-2xl ${
-            colorClasses[color as keyof typeof colorClasses] || colorClasses.blue
-          }`}
-        >
-          {icon}
+    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <div className={`inline-flex p-3 rounded-lg ${colorClasses[color]} mb-4`}>
+            <Icon className="w-6 h-6" />
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{label}</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white">{value}</p>
+          {trend && (
+            <div className="mt-2 flex items-center gap-1">
+              <span
+                className={`text-sm font-medium ${
+                  trend.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                }`}
+              >
+                {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
+              </span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">vs last week</span>
+            </div>
+          )}
         </div>
-        {trend && <div>{trendIcons[trend]}</div>}
-      </div>
-
-      <div className="space-y-1">
-        <p className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white">
-          {typeof value === 'number' && animate ? displayValue : value}
-          {suffix}
-        </p>
-        <p className="text-sm text-gray-600 dark:text-gray-400">{label}</p>
       </div>
     </div>
   )
 }
-
-
