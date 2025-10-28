@@ -1,7 +1,7 @@
 // src/components/feedback/TranscriptView.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { FileText, Copy, Check, ChevronDown, ChevronUp, ZoomIn, ZoomOut } from 'lucide-react'
 import { FILLER_WORDS } from '@/lib/openai/prompts'
 
@@ -25,18 +25,22 @@ export function TranscriptView({ transcript, detectedMetrics }: TranscriptViewPr
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // Highlight filler words in the transcript
-  const highlightFillers = (text: string) => {
-    let highlighted = text
-    FILLER_WORDS.forEach((filler) => {
-      const regex = new RegExp(`\\b${filler}\\b`, 'gi')
-      highlighted = highlighted.replace(
-        regex,
-        `<span class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1 rounded">${filler}</span>`
-      )
+  // 🔒 SECURITY FIX: Use React components instead of dangerouslySetInnerHTML
+  // This prevents XSS attacks from malicious transcript content
+  const highlightFillers = useCallback((text: string) => {
+    const words = text.split(/(\s+)/) // Split by spaces, keeping spaces
+    return words.map((word, index) => {
+      const cleanWord = word.toLowerCase().replace(/[.,!?;:]$/, '') // Remove punctuation for matching
+      if (FILLER_WORDS.includes(cleanWord)) {
+        return (
+          <span key={index} className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1 rounded">
+            {word}
+          </span>
+        )
+      }
+      return <span key={index}>{word}</span>
     })
-    return highlighted
-  }
+  }, [])
 
   const wordCount = transcript.split(/\s+/).length
   const textSizeClasses = {
@@ -94,10 +98,9 @@ export function TranscriptView({ transcript, detectedMetrics }: TranscriptViewPr
           isExpanded ? 'max-h-none' : 'max-h-32 overflow-hidden'
         } relative`}
       >
-        <div
-          className={`text-gray-700 dark:text-gray-300 leading-relaxed ${textSizeClasses[textSize as keyof typeof textSizeClasses]}`}
-          dangerouslySetInnerHTML={{ __html: highlightFillers(transcript) }}
-        />
+        <div className={`text-gray-700 dark:text-gray-300 leading-relaxed ${textSizeClasses[textSize as keyof typeof textSizeClasses]}`}>
+          {highlightFillers(transcript)}
+        </div>
         {!isExpanded && (
           <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-gray-50 dark:from-gray-900 to-transparent" />
         )}
