@@ -1,26 +1,112 @@
-import { StatsCard } from './StatsCard'
-import { StreakIndicator } from './StreakIndicator'
-import { DailyChallengeCard } from './DailyChallengeCard'
-import { QuickPracticeCard } from './QuickPracticeCard'
-import { RecentSessionsList } from './RecentSessionsList'
-import { TipOfTheDay } from './TipOfTheDay'
-import type { UserStats, DailyChallenge, RecentSession } from '@/lib/api/dashboard'
+'use client'
 
-interface UserDashboardProps {
-  userName: string
-  stats: UserStats
-  dailyChallenge: DailyChallenge | null
-  recentSessions: RecentSession[]
-  tipOfTheDay: string
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Flame, BarChart2, Target, TrendingUp, Mic, ArrowRight, Loader2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { getProfile } from '@/lib/db/profiles'
+import { getUserRecentSessions } from '@/lib/db/sessions'
+import { getDailyChallenge } from '@/lib/scenarios/generator'
+import { StatsCard } from './StatsCard'
+import { DailyChallengeCard } from './DailyChallengeCard'
+import { RecentSessionCard } from './RecentSessionCard'
+import type { Scenario } from '@/types/scenario'
+
+interface ProfileData {
+  id: string
+  email: string
+  full_name: string | null
+  total_sessions: number
+  streak_count: number
+  best_score: number | null
+  created_at: string
 }
 
-export function UserDashboard({
-  userName,
-  stats,
-  dailyChallenge,
-  recentSessions,
-  tipOfTheDay,
-}: UserDashboardProps) {
+interface SessionData {
+  id: string
+  created_at: string
+  scenario?: {
+    objective: string
+    context: string
+  }
+  scores: {
+    clarity: number
+    confidence: number
+    logic: number
+    pacing: number
+    fillers: number
+  }
+}
+
+export function UserDashboard() {
+  const router = useRouter()
+  const [profile, setProfile] = useState<ProfileData | null>(null)
+  const [sessions, setSessions] = useState<SessionData[]>([])
+  const [dailyScenario, setDailyScenario] = useState<Scenario | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function loadDashboard() {
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+          router.push('/auth/login')
+          return
+        }
+
+        // Load all data in parallel
+        const [profileData, sessionsData, scenario] = await Promise.all([
+          getProfile(user.id),
+          getUserRecentSessions(user.id, 5),
+          getDailyChallenge(user.id)
+        ])
+
+        setProfile(profileData)
+        setSessions(sessionsData || [])
+        setDailyScenario(scenario)
+      } catch (err) {
+        console.error('Failed to load dashboard:', err)
+        setError('Failed to load dashboard data')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadDashboard()
+  }, [router])
+
+  // Calculate stats
+  const calculateAverageScore = () => {
+    if (sessions.length === 0) return 0
+    const totalScore = sessions.reduce((sum, session) => {
+      const avg = (
+        session.scores.clarity +
+        session.scores.confidence +
+        session.scores.logic +
+        session.scores.pacing +
+        session.scores.fillers
+      ) / 5
+      return sum + avg
+    }, 0)
+    return (totalScore / sessions.length).toFixed(1)
+  }
+
+  const calculateBestScore = () => {
+    if (sessions.length === 0) return 0
+    const scores = sessions.map(session => 
+      (session.scores.clarity +
+        session.scores.confidence +
+        session.scores.logic +
+        session.scores.pacing +
+        session.scores.fillers) / 5
+    )
+    return Math.max(...scores).toFixed(1)
+  }
+
+  // Get time-based greeting
   const getGreeting = () => {
     const hour = new Date().getHours()
     if (hour < 12) return 'Good morning'
@@ -28,58 +114,157 @@ export function UserDashboard({
     return 'Good evening'
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Loading your dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !profile) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 dark:text-red-400 mb-4">{error || 'Failed to load profile'}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  const averageScore = calculateAverageScore()
+  const bestScore = calculateBestScore()
+  const firstName = profile.full_name?.split(' ')[0] || 'there'
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Welcome Section */}
-      <div className="mb-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2">
-          {getGreeting()}, {userName}! 👋
-        </h1>
-        <p className="text-lg text-gray-600 dark:text-gray-400">Ready for today's practice?</p>
-      </div>
-
-      {/* Stats Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-        <StatsCard label="Current Streak" value={stats.currentStreak} icon="🔥" color="amber" suffix=" days" />
-        <StatsCard label="Total Sessions" value={stats.totalSessions} icon="🎯" color="blue" />
-        <StatsCard label="Best Score" value={stats.bestScore.toFixed(1)} icon="⭐" color="purple" suffix="/10" />
-        <StatsCard
-          label="Improvement"
-          value={stats.improvementPercent}
-          icon="📈"
-          color="green"
-          suffix="%"
-          trend={stats.improvementPercent > 0 ? 'up' : stats.improvementPercent < 0 ? 'down' : 'neutral'}
-        />
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {/* Left Column - 2/3 width */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Daily Challenge */}
-          <DailyChallengeCard challenge={dailyChallenge} />
-
-          {/* Recent Sessions */}
-          <RecentSessionsList sessions={recentSessions} />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2">
+            {getGreeting()}, {firstName}! 👋
+          </h1>
+          {profile.streak_count > 0 && (
+            <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
+              <Flame className="w-5 h-5" />
+              <span className="font-semibold">{profile.streak_count} day streak</span>
+            </div>
+          )}
         </div>
 
-        {/* Right Column - 1/3 width */}
-        <div className="space-y-6">
-          {/* Quick Practice */}
-          <QuickPracticeCard />
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <StatsCard
+            icon={<BarChart2 className="w-6 h-6" />}
+            label="Total Sessions"
+            value={profile.total_sessions}
+            color="blue"
+          />
+          <StatsCard
+            icon={<Flame className="w-6 h-6" />}
+            label="Current Streak"
+            value={profile.streak_count}
+            color="orange"
+            sublabel={profile.streak_count === 0 ? 'Start today!' : 'Keep it going!'}
+          />
+          <StatsCard
+            icon={<TrendingUp className="w-6 h-6" />}
+            label="Average Score"
+            value={sessions.length > 0 ? `${averageScore}/10` : '-'}
+            color="purple"
+          />
+          <StatsCard
+            icon={<Target className="w-6 h-6" />}
+            label="Best Score"
+            value={sessions.length > 0 ? `${bestScore}/10` : '-'}
+            color="green"
+          />
+        </div>
 
-          {/* Tip of the Day */}
-          <TipOfTheDay initialTip={tipOfTheDay} />
-
-          {/* Streak Indicator */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
-            <StreakIndicator streak={stats.currentStreak} />
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Daily Challenge */}
+          <div className="lg:col-span-2">
+            <DailyChallengeCard
+              scenario={dailyScenario}
+              completed={false}
+              loading={false}
+            />
           </div>
+
+          {/* Quick Practice */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2 mb-4">
+              <Mic className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Quick Practice</h3>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm">
+              Practice any scenario at your own pace
+            </p>
+            <button
+              onClick={() => router.push('/practice')}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <Mic className="w-5 h-5" />
+              Start Practice
+            </button>
+            {sessions.length > 0 && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
+                Last practice: {new Date(sessions[0].created_at).toLocaleDateString()}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Sessions */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Recent Sessions</h3>
+            {sessions.length > 0 && (
+              <button
+                onClick={() => router.push('/progress')}
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm flex items-center gap-1"
+              >
+                View All
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {sessions.length === 0 ? (
+            <div className="text-center py-12">
+              <Mic className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                No practice sessions yet
+              </h4>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Start your first practice session to see your progress here
+              </p>
+              <button
+                onClick={() => router.push('/practice')}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+              >
+                Start First Practice
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {sessions.slice(0, 5).map(session => (
+                <RecentSessionCard key={session.id} session={session} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
   )
 }
-
-
