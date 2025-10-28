@@ -48,7 +48,9 @@ export function initGuestSession(): GuestSession {
     scores: [],
   }
 
-  localStorage.setItem(GUEST_KEY, JSON.stringify(session))
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(GUEST_KEY, JSON.stringify(session))
+  }
   return session
 }
 
@@ -87,7 +89,9 @@ export function incrementGuestUsage(): GuestSession {
   session.sessionCount += 1
   session.todaysSessions += 1
   session.lastPractice = Date.now()
-  localStorage.setItem(GUEST_KEY, JSON.stringify(session))
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(GUEST_KEY, JSON.stringify(session))
+  }
   return session
 }
 
@@ -151,7 +155,9 @@ export function saveGuestScore(scores: {
     session.scores = session.scores.slice(-10)
   }
 
-  localStorage.setItem(GUEST_KEY, JSON.stringify(session))
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(GUEST_KEY, JSON.stringify(session))
+  }
   return session
 }
 
@@ -159,7 +165,9 @@ export function saveGuestScore(scores: {
  * Clear guest session data
  */
 export function clearGuestSession(): void {
-  localStorage.removeItem(GUEST_KEY)
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(GUEST_KEY)
+  }
 }
 
 /**
