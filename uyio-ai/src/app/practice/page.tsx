@@ -7,7 +7,7 @@ import { VoiceRecorder } from '@/components/practice/VoiceRecorder'
 import { TranscriptionStatus } from '@/components/practice/TranscriptionStatus'
 import { generateScenario } from '@/lib/scenarios/generator'
 import { markScenarioUsed } from '@/lib/scenarios/tracker'
-import { createBrowserClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import type { Scenario } from '@/types/scenario'
 import type { FeedbackResult } from '@/types/feedback'
 import { Loader2, RefreshCw, CheckCircle, Sparkles } from 'lucide-react'
@@ -37,7 +37,7 @@ export default function PracticePage() {
   // Check authentication - redirect guests to /practice/guest
   useEffect(() => {
     const checkAuth = async () => {
-      const supabase = createBrowserClient()
+      const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {

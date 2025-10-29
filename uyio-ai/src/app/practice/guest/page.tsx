@@ -327,7 +327,8 @@ export default function GuestPracticePage() {
                         const randomPrompt = GUEST_PROMPTS[Math.floor(Math.random() * GUEST_PROMPTS.length)]
                         setCurrentPrompt(randomPrompt)
                       } else {
-                        setShowLimitModal(true)
+                        toast.error('Daily limit reached! Sign up for unlimited practice.')
+                        setShowSignupModal(true)
                       }
                     }}
                     className="px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
