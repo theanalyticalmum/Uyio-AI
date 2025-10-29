@@ -54,15 +54,22 @@ export function UserDashboard() {
           getUserRecentSessions(user.id, 5),
         ])
 
+        // If no profile exists, redirect to onboarding
+        if (!profileData) {
+          console.log('No profile found, redirecting to onboarding')
+          router.push('/auth/onboarding')
+          return
+        }
+
         // Generate daily challenge based on user's goal
         const scenario = getDailyChallenge(profileData?.primary_goal)
 
         setProfile(profileData)
         setSessions(sessionsData || [])
         setDailyScenario(scenario)
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to load dashboard:', err)
-        setError('Failed to load dashboard data')
+        setError(err?.message || 'Failed to load dashboard data')
       } finally {
         setLoading(false)
       }
@@ -118,17 +125,27 @@ export function UserDashboard() {
     )
   }
 
-  if (error || !profile) {
+  if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 dark:text-red-400 mb-4">{error || 'Failed to load profile'}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          >
-            Retry
-          </button>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Unable to Load Dashboard</h2>
+          <p className="text-red-600 dark:text-red-400 mb-6">{error}</p>
+          <div className="space-y-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => router.push('/auth/onboarding')}
+              className="w-full px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Complete Setup
+            </button>
+          </div>
         </div>
       </div>
     )
