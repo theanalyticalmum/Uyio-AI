@@ -151,6 +151,11 @@ export function UserDashboard() {
     )
   }
 
+  // Early return ensures profile is not null here
+  if (!profile) {
+    return null
+  }
+
   const averageScore = calculateAverageScore()
   const bestScore = calculateBestScore()
   const firstName = profile.display_name?.split(' ')[0] || 'there'
