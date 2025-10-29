@@ -261,15 +261,9 @@ export function UserDashboard() {
               <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 No practice sessions yet
               </h4>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Start your first practice session to see your progress here
+              <p className="text-gray-600 dark:text-gray-400">
+                Complete a practice session or try today's challenge to see your history here
               </p>
-              <button
-                onClick={() => router.push('/practice')}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
-              >
-                Start First Practice
-              </button>
             </div>
           ) : (
             <div className="space-y-3">
