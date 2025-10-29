@@ -97,9 +97,13 @@ export async function createSession(input: SessionInput): Promise<Session> {
  * Save a practice session (legacy compatibility)
  */
 export async function saveSession(data: SaveSessionData): Promise<string> {
+  // Check if scenario_id is a valid UUID, if not set to null
+  // Template scenarios use string IDs like 'work-clarity-01' which aren't UUIDs
+  const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.scenario_id)
+  
   const session = await createSession({
     user_id: data.user_id,
-    scenario_id: data.scenario_id,
+    scenario_id: isValidUUID ? data.scenario_id : null,
     audio_url: data.audio_url,
     transcript: data.transcript,
     duration_sec: data.duration_sec,
@@ -108,6 +112,12 @@ export async function saveSession(data: SaveSessionData): Promise<string> {
     coaching_tips: data.feedback.coaching,
     detected_metrics: data.feedback.detectedMetrics,
     is_daily_challenge: data.is_daily_challenge,
+    meta: {
+      // Store original scenario ID for template scenarios
+      template_scenario_id: !isValidUUID ? data.scenario_id : undefined,
+      device: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+      app_version: '1.0.0',
+    },
   })
 
   return session.id
