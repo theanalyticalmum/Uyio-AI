@@ -229,10 +229,10 @@ export default function GuestPracticePage() {
                   <p className="text-sm text-white/80 mb-2">Your Overall Score</p>
                   <div className="text-6xl font-bold text-white mb-2">{sessionScore?.toFixed(1)}/10</div>
                   <p className="text-white/90 text-lg font-medium">
-                    {sessionScore && sessionScore >= 9.5 ? "Outstanding! 🏆" : 
-                     sessionScore && sessionScore >= 8.5 ? "Excellent! 🌟" : 
-                     sessionScore && sessionScore >= 7.5 ? "Great job! 👏" : 
-                     "Good effort! 💪"}
+                    {sessionScore && sessionScore >= 9.5 ? "Outstanding!" : 
+                     sessionScore && sessionScore >= 8.5 ? "Excellent!" : 
+                     sessionScore && sessionScore >= 7.5 ? "Great job!" : 
+                     "Good effort!"}
                   </p>
                 </div>
 
