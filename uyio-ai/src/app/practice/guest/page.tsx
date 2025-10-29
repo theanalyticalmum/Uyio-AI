@@ -95,10 +95,20 @@ export default function GuestPracticePage() {
       'Your response was recorded successfully! This is a preview of how your speech would be transcribed. Sign up for a free account to get real AI-powered transcription and detailed feedback on clarity, confidence, pacing, and more.'
     const mockScore = Math.random() * 3 + 7 // Score between 7-10
 
+    // Generate feedback based on score
+    let feedbackMessage = ''
+    if (mockScore >= 9.5) {
+      feedbackMessage = 'Outstanding performance! Your communication skills are exceptional. Sign up to unlock detailed AI analysis and track your continued excellence across all metrics.'
+    } else if (mockScore >= 8.5) {
+      feedbackMessage = 'Excellent work! You demonstrated strong communication skills. Sign up to see your detailed scores for clarity, confidence, logic, pacing, and fillers—plus get personalized coaching to reach perfection.'
+    } else if (mockScore >= 7.5) {
+      feedbackMessage = 'Great job! Your communication is solid with room for growth. Sign up to unlock detailed AI analysis including: clarity score, confidence level, pacing feedback, filler word detection, and personalized coaching tips.'
+    } else {
+      feedbackMessage = 'Good effort! You have a foundation to build on. Sign up to unlock detailed feedback on clarity, confidence, pacing, and get personalized coaching tips to improve faster.'
+    }
+
     setTranscript(mockTranscript)
-    setFeedback(
-      'Nice work! Your communication shows promise. Sign up to unlock detailed AI analysis including: clarity score, confidence level, pacing feedback, filler word detection, and personalized coaching tips for improvement.'
-    )
+    setFeedback(feedbackMessage)
     setSessionScore(mockScore)
 
     // Save score and increment usage
@@ -111,10 +121,8 @@ export default function GuestPracticePage() {
 
     setIsProcessing(false)
 
-    // Show signup prompt if criteria met
-    if (shouldPromptSignup()) {
-      setTimeout(() => setShowSignupModal(true), 1000)
-    }
+    // Don't auto-show modal - let users see results first
+    // They can click signup buttons when ready
 
     toast.success(`Session complete! Score: ${mockScore.toFixed(1)}/10`)
   }
@@ -221,7 +229,10 @@ export default function GuestPracticePage() {
                   <p className="text-sm text-white/80 mb-2">Your Overall Score</p>
                   <div className="text-6xl font-bold text-white mb-2">{sessionScore?.toFixed(1)}/10</div>
                   <p className="text-white/90 text-lg font-medium">
-                    {sessionScore && sessionScore >= 8 ? "Great job! 🌟" : sessionScore && sessionScore >= 6 ? "Good work! 👏" : "Nice try! 💪"}
+                    {sessionScore && sessionScore >= 9.5 ? "Outstanding! 🏆" : 
+                     sessionScore && sessionScore >= 8.5 ? "Excellent! 🌟" : 
+                     sessionScore && sessionScore >= 7.5 ? "Great job! 👏" : 
+                     "Good effort! 💪"}
                   </p>
                 </div>
 
