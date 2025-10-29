@@ -169,7 +169,7 @@ export function MobileNav() {
                     Sign In
                   </Link>
                   <Link
-                    href="/auth/signup"
+                    href="/practice/guest"
                     className="flex items-center justify-center px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-semibold"
                   >
                     Start Free

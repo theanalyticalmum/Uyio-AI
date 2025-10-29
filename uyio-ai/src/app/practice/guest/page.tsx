@@ -14,6 +14,20 @@ import {
 import { toast } from 'sonner'
 import { Mic, Square, Loader2 } from 'lucide-react'
 
+// Simple practice prompts for guest users
+const GUEST_PROMPTS = [
+  "Describe your ideal weekend and what makes it special to you.",
+  "Tell me about a recent accomplishment you're proud of.",
+  "Explain your favorite hobby and why you enjoy it.",
+  "Describe a place you'd love to visit and why.",
+  "Share your thoughts on what makes a great leader.",
+  "Talk about a book or movie that impacted you.",
+  "Describe your morning routine and why it works for you.",
+  "Explain what motivates you to achieve your goals.",
+  "Share your perspective on the importance of learning.",
+  "Describe a challenge you overcame and what you learned.",
+]
+
 export default function GuestPracticePage() {
   const router = useRouter()
   const [canPractice, setCanPractice] = useState(true)
@@ -24,6 +38,13 @@ export default function GuestPracticePage() {
   const [countdown, setCountdown] = useState(60)
   const [transcript, setTranscript] = useState('')
   const [feedback, setFeedback] = useState('')
+  const [currentPrompt, setCurrentPrompt] = useState('')
+
+  // Select random prompt on mount and when restarting
+  useEffect(() => {
+    const randomPrompt = GUEST_PROMPTS[Math.floor(Math.random() * GUEST_PROMPTS.length)]
+    setCurrentPrompt(randomPrompt)
+  }, [])
 
   useEffect(() => {
     // Check if guest can practice
@@ -153,7 +174,7 @@ export default function GuestPracticePage() {
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Suggested topic:</p>
                   <p className="text-lg font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                    Describe your ideal weekend and what makes it special to you.
+                    {currentPrompt || "Speak about any topic you like!"}
                   </p>
                 </div>
 
@@ -297,10 +318,14 @@ export default function GuestPracticePage() {
                   <button
                     onClick={() => {
                       if (canPracticeAsGuest()) {
+                        // Reset state
                         setTranscript('')
                         setFeedback('')
                         setSessionScore(null)
                         setCountdown(60)
+                        // Get new random prompt
+                        const randomPrompt = GUEST_PROMPTS[Math.floor(Math.random() * GUEST_PROMPTS.length)]
+                        setCurrentPrompt(randomPrompt)
                       } else {
                         setShowLimitModal(true)
                       }
