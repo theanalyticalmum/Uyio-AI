@@ -79,7 +79,7 @@ export default function OnboardingPage() {
     }
 
     toast.success('Welcome to Uyio AI! 🎉')
-    router.push('/dashboard')
+    router.push('/')
   }
 
   return (

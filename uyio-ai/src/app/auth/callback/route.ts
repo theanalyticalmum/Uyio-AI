@@ -31,9 +31,9 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}/auth/onboarding`)
       }
 
-      // If onboarding is complete, go to dashboard
+      // If onboarding is complete, go to homepage (which shows UserDashboard)
       if (profile.onboarding_completed) {
-        return NextResponse.redirect(`${origin}/dashboard`)
+        return NextResponse.redirect(`${origin}/`)
       }
 
       // Otherwise, complete onboarding
