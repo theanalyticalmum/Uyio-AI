@@ -31,13 +31,10 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}/auth/onboarding`)
       }
 
-      // If onboarding is complete, go to homepage (which shows UserDashboard)
-      if (profile.onboarding_completed) {
-        const response = NextResponse.redirect(`${origin}/`)
-        // Prevent caching to ensure fresh auth check
-        response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
-        return response
-      }
+          // If onboarding is complete, go to dashboard
+          if (profile.onboarding_completed) {
+            return NextResponse.redirect(`${origin}/dashboard`)
+          }
 
       // Otherwise, complete onboarding
       return NextResponse.redirect(`${origin}/auth/onboarding`)

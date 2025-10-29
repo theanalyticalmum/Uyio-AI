@@ -1,22 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
 import { GuestHero } from '@/components/home/GuestHero'
-import { UserDashboard } from '@/components/home/UserDashboard'
 
-// Force dynamic rendering to always check authentication
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
-
-export default async function HomePage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  // If not authenticated, show guest hero
-  if (!user) {
-    return <GuestHero />
-  }
-
-  // If authenticated, show user dashboard (handles its own data fetching)
-  return <UserDashboard />
+// Homepage is always the guest landing page
+// Authenticated users are redirected to /dashboard
+export default function HomePage() {
+  return <GuestHero />
 }
