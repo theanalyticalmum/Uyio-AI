@@ -102,7 +102,7 @@ export function DailyChallengeCard({ scenario, completed, loading }: DailyChalle
           className="w-full bg-white text-purple-600 font-bold py-3 rounded-lg hover:bg-purple-50 transition-colors flex items-center justify-center gap-2"
         >
           <Zap className="w-5 h-5" />
-          Start Challenge
+          Try Today's Challenge
         </button>
       </div>
     </div>

@@ -110,9 +110,12 @@ export default function OnboardingPage() {
 
             {/* Goal Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 What&apos;s your primary goal?
               </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                Choose one focus area (you can change this anytime in Settings)
+              </p>
               <div className="space-y-3">
                 {GOALS.map((goal) => (
                   <GoalCard
