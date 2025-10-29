@@ -245,32 +245,29 @@ export default function GuestPracticePage() {
                   <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{feedback}</p>
                 </div>
 
-                {/* Locked Detailed Scores Preview */}
-                <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 p-6 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600">
-                  <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl flex items-center justify-center z-10">
-                    <div className="text-center px-6">
+                {/* Locked Detailed Scores Preview - Clickable */}
+                <div 
+                  onClick={() => setShowSignupModal(true)}
+                  className="relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 p-6 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 cursor-pointer hover:border-blue-400 dark:hover:border-blue-600 transition-colors"
+                >
+                  <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                    <div className="text-center px-4 py-6">
                       <div className="text-4xl mb-3">🔒</div>
                       <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                         Unlock Detailed Analysis
                       </h3>
-                      <p className="text-gray-600 dark:text-gray-400 mb-4 max-w-sm">
-                        Sign up free to see your detailed scores for Clarity, Confidence, Logic, Pacing, and Fillers—plus personalized coaching tips!
+                      <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs mx-auto">
+                        See detailed scores for Clarity, Confidence, Logic, Pacing, and Fillers
                       </p>
-                      <button
-                        onClick={() => setShowSignupModal(true)}
-                        className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors shadow-lg"
-                      >
-                        Sign Up Free →
-                      </button>
                     </div>
                   </div>
                   {/* Blurred preview of detailed scores */}
                   <div className="opacity-30 pointer-events-none">
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Your Detailed Scores</h3>
-                    <div className="grid grid-cols-5 gap-3">
+                    <div className="grid grid-cols-5 gap-2">
                       {['Clarity', 'Confidence', 'Logic', 'Pacing', 'Fillers'].map((metric) => (
                         <div key={metric} className="text-center">
-                          <div className="w-16 h-16 rounded-full bg-blue-500 mx-auto mb-2"></div>
+                          <div className="w-12 h-12 rounded-full bg-blue-500 mx-auto mb-1"></div>
                           <p className="text-xs font-medium">{metric}</p>
                         </div>
                       ))}
@@ -278,23 +275,20 @@ export default function GuestPracticePage() {
                   </div>
                 </div>
 
-                {/* Locked Coaching Tips Preview */}
-                <div className="relative bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-6 rounded-xl border-2 border-dashed border-purple-300 dark:border-purple-700">
-                  <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl flex items-center justify-center z-10">
-                    <div className="text-center px-6">
+                {/* Locked Coaching Tips Preview - Clickable */}
+                <div 
+                  onClick={() => setShowSignupModal(true)}
+                  className="relative bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-6 rounded-xl border-2 border-dashed border-purple-300 dark:border-purple-700 cursor-pointer hover:border-purple-400 dark:hover:border-purple-600 transition-colors"
+                >
+                  <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                    <div className="text-center px-4 py-6">
                       <div className="text-4xl mb-3">🎯</div>
                       <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                         Personalized Coaching Tips
                       </h3>
-                      <p className="text-gray-600 dark:text-gray-400 mb-4 max-w-sm">
-                        Get AI-powered tips tailored to YOUR specific communication style and goals.
+                      <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs mx-auto">
+                        Get AI-powered tips tailored to your communication style
                       </p>
-                      <button
-                        onClick={() => setShowSignupModal(true)}
-                        className="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-lg transition-colors shadow-lg"
-                      >
-                        Unlock Coaching →
-                      </button>
                     </div>
                   </div>
                   {/* Blurred preview */}
@@ -310,7 +304,7 @@ export default function GuestPracticePage() {
 
                 {/* Limited Sessions Notice */}
                 <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                  <p className="text-sm text-yellow-900 dark:text-yellow-300 mb-2 font-medium">
+                  <p className="text-sm text-yellow-900 dark:text-yellow-300 mb-1 font-medium">
                     ⚡ {3 - (getRemainingSessionsToday())} of 3 free sessions used today
                   </p>
                   <p className="text-xs text-yellow-800 dark:text-yellow-400">
@@ -319,33 +313,38 @@ export default function GuestPracticePage() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  {/* Primary CTA - Sign Up */}
                   <button
                     onClick={() => setShowSignupModal(true)}
-                    className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors shadow-lg"
+                    className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold rounded-lg transition-all shadow-lg text-lg"
                   >
-                    Sign Up Free
+                    🎯 Unlock Full Analysis & Coaching
                   </button>
-                  <button
-                    onClick={() => {
-                      if (canPracticeAsGuest()) {
-                        // Reset state
-                        setTranscript('')
-                        setFeedback('')
-                        setSessionScore(null)
-                        setCountdown(60)
-                        // Get new random prompt
-                        const randomPrompt = GUEST_PROMPTS[Math.floor(Math.random() * GUEST_PROMPTS.length)]
-                        setCurrentPrompt(randomPrompt)
-                      } else {
-                        toast.error('Daily limit reached! Sign up for unlimited practice.')
-                        setShowSignupModal(true)
-                      }
-                    }}
-                    className="px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    Try Another ({getRemainingSessionsToday()} left)
-                  </button>
+                  
+                  {/* Secondary CTA - Try Another */}
+                  {getRemainingSessionsToday() > 0 && (
+                    <button
+                      onClick={() => {
+                        if (canPracticeAsGuest()) {
+                          // Reset state
+                          setTranscript('')
+                          setFeedback('')
+                          setSessionScore(null)
+                          setCountdown(60)
+                          // Get new random prompt
+                          const randomPrompt = GUEST_PROMPTS[Math.floor(Math.random() * GUEST_PROMPTS.length)]
+                          setCurrentPrompt(randomPrompt)
+                        } else {
+                          toast.error('Daily limit reached! Sign up for unlimited practice.')
+                          setShowSignupModal(true)
+                        }
+                      }}
+                      className="w-full px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      Try Another Practice ({getRemainingSessionsToday()} left)
+                    </button>
+                  )}
                 </div>
               </div>
             )}
