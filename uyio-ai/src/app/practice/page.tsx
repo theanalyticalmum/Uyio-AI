@@ -34,24 +34,53 @@ export default function PracticePage() {
   const [feedback, setFeedback] = useState<FeedbackResult | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Check authentication - redirect guests to /practice/guest
+  // Check authentication with timeout - redirect guests to /practice/guest
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout
+    
     const checkAuth = async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        // No user = guest, redirect to guest practice
-        router.push('/practice/guest')
-        return
+      try {
+        // Set timeout to prevent infinite loading
+        timeoutId = setTimeout(() => {
+          console.error('Auth check timeout')
+          setError('Authentication check timed out. Please try again.')
+          setLoading(false)
+        }, 5000) // 5 second timeout
+        
+        const supabase = createClient()
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        
+        // Clear timeout if we got a response
+        clearTimeout(timeoutId)
+        
+        if (authError) {
+          console.error('Auth error:', authError)
+          // On error, allow guest mode
+          router.push('/practice/guest')
+          return
+        }
+        
+        if (!user) {
+          // No user = guest, redirect to guest practice
+          router.push('/practice/guest')
+          return
+        }
+        
+        // User is authenticated, load scenario
+        loadScenario()
+      } catch (err) {
+        clearTimeout(timeoutId)
+        console.error('Unexpected error during auth check:', err)
+        setError('Failed to check authentication. Redirecting to guest mode...')
+        setTimeout(() => router.push('/practice/guest'), 2000)
       }
-      
-      // User is authenticated, load scenario
-      loadScenario()
     }
     
     checkAuth()
-  }, [])
+    
+    // Cleanup timeout on unmount
+    return () => clearTimeout(timeoutId)
+  }, [router])
 
   const loadScenario = () => {
     setLoading(true)

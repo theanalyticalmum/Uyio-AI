@@ -43,23 +43,55 @@ export default function ProgressPage() {
     limit: 100,
   })
 
-  // Check authentication
+  // Check authentication with timeout
   useEffect(() => {
-    checkAuth()
-  }, [])
+    let timeoutId: NodeJS.Timeout
+    
+    const checkAuth = async () => {
+      try {
+        // Set timeout to prevent infinite loading
+        timeoutId = setTimeout(() => {
+          console.error('Auth check timeout on progress page')
+          setIsAuthenticated(false)
+          toast.error('Authentication check timed out. Please sign in.')
+          router.push('/auth/login?redirect=/progress')
+        }, 5000) // 5 second timeout
+        
+        const supabase = createClient()
+        const { data, error: authError } = await supabase.auth.getUser()
+        
+        // Clear timeout if we got a response
+        clearTimeout(timeoutId)
 
-  const checkAuth = async () => {
-    const supabase = createClient()
-    const { data } = await supabase.auth.getUser()
+        if (authError) {
+          console.error('Auth error on progress page:', authError)
+          setIsAuthenticated(false)
+          toast.error('Please sign in to view your progress')
+          router.push('/auth/login?redirect=/progress')
+          return
+        }
 
-    if (!data?.user) {
-      setIsAuthenticated(false)
-      toast.error('Please sign in to view your progress')
-      router.push('/auth/login?redirect=/progress')
-    } else {
-      setIsAuthenticated(true)
+        if (!data?.user) {
+          setIsAuthenticated(false)
+          toast.error('Please sign in to view your progress')
+          router.push('/auth/login?redirect=/progress')
+        } else {
+          setIsAuthenticated(true)
+        }
+      } catch (err) {
+        clearTimeout(timeoutId)
+        console.error('Unexpected error during auth check:', err)
+        setIsAuthenticated(false)
+        toast.error('Failed to check authentication')
+        router.push('/auth/login?redirect=/progress')
+      }
     }
-  }
+    
+    checkAuth()
+    
+    // Cleanup timeout on unmount
+    return () => clearTimeout(timeoutId)
+  }, [router])
 
   // Filter sessions based on filters
   const filteredSessions = sessions.filter((session) => {
