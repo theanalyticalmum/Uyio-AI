@@ -342,7 +342,7 @@ If you could change ONE thing right now, what would it be?
 ## 📬 SUBMIT YOUR FEEDBACK
 
 ### How to Send This Back:
-1. **Email:** Send to [your-email@example.com]
+1. **Email:** Send to ntaetim@yahoo.com
 2. **Google Form:** [Insert link to Google Form]
 3. **Loom Video:** Record a screen share walking through your experience
 
@@ -362,11 +362,11 @@ Your feedback is incredibly valuable and will directly shape the future of Uyio 
 - We'll review your feedback within 48 hours
 - We'll reach out if we have follow-up questions
 - You'll get early access to new features
-- [Optional] $25 gift card for completed testing
+
 
 ---
 
-**Questions?** Contact us at [your-email@example.com]
+**Questions?** Contact us at ntaetim@yahoo.com
 
-**Found a critical bug?** Text/WhatsApp: [your-number] (urgent issues only)
+**Found a critical bug?** Email us ASAP, please
 

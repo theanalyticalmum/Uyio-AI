@@ -115,13 +115,16 @@ export async function updateProfile(data: ProfileUpdate) {
     return { error: 'Not authenticated' }
   }
 
-  const { error } = await supabase.from('profiles').update(data).eq('id', user.id)
+  const { error } = await supabase
+    .from('profiles')
+    .update(data)
+    .eq('id', user.id)
 
   if (error) {
     return { error: error.message }
   }
 
-  revalidatePath('/dashboard')
+  // NO REDIRECT - just return success
   return { success: true }
 }
 

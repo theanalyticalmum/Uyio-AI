@@ -1,5 +1,4 @@
 // src/app/not-found.tsx
-import Link from 'next/link'
 import { Home, Mic, TrendingUp } from 'lucide-react'
 
 export default function NotFound() {
@@ -17,29 +16,29 @@ export default function NotFound() {
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Link
+          <a
             href="/"
             className="flex flex-col items-center gap-2 p-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors"
           >
             <Home className="w-6 h-6 text-blue-500" />
             <span className="text-sm font-medium text-gray-900 dark:text-white">Home</span>
-          </Link>
+          </a>
 
-          <Link
+          <a
             href="/practice"
             className="flex flex-col items-center gap-2 p-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors"
           >
             <Mic className="w-6 h-6 text-blue-500" />
             <span className="text-sm font-medium text-gray-900 dark:text-white">Practice</span>
-          </Link>
+          </a>
 
-          <Link
+          <a
             href="/progress"
             className="flex flex-col items-center gap-2 p-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors"
           >
             <TrendingUp className="w-6 h-6 text-blue-500" />
             <span className="text-sm font-medium text-gray-900 dark:text-white">Progress</span>
-          </Link>
+          </a>
         </div>
       </div>
     </div>

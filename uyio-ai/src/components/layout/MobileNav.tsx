@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Mic, TrendingUp, BookOpen } from 'lucide-react'
+import { Menu, X, Mic, TrendingUp, BookOpen, Settings, Crown, HelpCircle } from 'lucide-react'
 import { Logo } from './Logo'
 import { Badge } from '../common/Badge'
 import { createClient } from '@/lib/supabase/client'
@@ -150,8 +150,26 @@ export function MobileNav() {
                   <Link
                     href="/settings"
                     className="flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                    onClick={() => setIsOpen(false)}
                   >
+                    <Settings className="w-5 h-5" />
                     <span>Settings</span>
+                  </Link>
+                  <Link
+                    href="/subscription"
+                    className="flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Crown className="w-5 h-5 text-amber-500" />
+                    <span>Subscription</span>
+                  </Link>
+                  <Link
+                    href="/help"
+                    className="flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <HelpCircle className="w-5 h-5" />
+                    <span>Help</span>
                   </Link>
                   <button
                     onClick={handleSignOut}
