@@ -105,15 +105,8 @@ export default function AuthCompletePage() {
             {status}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Please wait while we set up your account...
+            Please wait while we complete your sign-in...
           </p>
-          
-          {/* Mobile-specific message */}
-          <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-            <p className="text-sm text-blue-900 dark:text-blue-300">
-              📱 If you're not redirected automatically, you may need to open this page in your main browser (Safari/Chrome) instead of the email app.
-            </p>
-          </div>
         </div>
       </div>
     </div>
