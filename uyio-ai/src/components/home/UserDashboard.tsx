@@ -249,11 +249,6 @@ export function UserDashboard() {
               <Mic className="w-5 h-5" />
               Start Practice
             </button>
-            {sessions.length > 0 && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-                Last practice: {new Date(sessions[0].created_at).toLocaleDateString()}
-              </p>
-            )}
           </div>
         </div>
 
