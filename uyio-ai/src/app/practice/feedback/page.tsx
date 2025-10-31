@@ -103,7 +103,13 @@ export default function FeedbackPage() {
       })
 
       setSessionId(id)
-      toast.success('Session saved successfully!')
+      
+      // If this was a daily challenge, show special message
+      if (data.isDailyChallenge) {
+        toast.success('Daily challenge completed! 🎉 Come back tomorrow for a new one!')
+      } else {
+        toast.success('Session saved successfully!')
+      }
     } catch (error) {
       console.error('Error saving session:', error)
       toast.error('Failed to save session. Your feedback is still available.')

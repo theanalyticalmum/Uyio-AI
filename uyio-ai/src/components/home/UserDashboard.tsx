@@ -16,6 +16,7 @@ import type { Profile } from '@/types/database'
 interface SessionData {
   id: string
   created_at: string
+  is_daily_challenge?: boolean
   scenario?: {
     objective: string
     context: string
@@ -34,6 +35,7 @@ export function UserDashboard() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [sessions, setSessions] = useState<SessionData[]>([])
   const [dailyScenario, setDailyScenario] = useState<Scenario | null>(null)
+  const [dailyChallengeCompleted, setDailyChallengeCompleted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -61,12 +63,27 @@ export function UserDashboard() {
           return
         }
 
-        // Generate daily challenge based on user's goal
-        const scenario = getDailyChallenge(profileData?.primary_goal)
+        // Generate today's challenge scenario (deterministic based on date + goal)
+        const scenario = getDailyChallenge(profileData.primary_goal)
+        
+        // Check if user already completed today's daily challenge
+        // by looking for sessions with is_daily_challenge=true created today
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const todayISO = today.toISOString()
+        
+        const completedToday = sessionsData?.some(session => {
+          const sessionDate = new Date(session.created_at)
+          sessionDate.setHours(0, 0, 0, 0)
+          return sessionDate.toISOString() === todayISO && session.is_daily_challenge
+        }) || false
+        
+        const isCompleted = completedToday
 
         setProfile(profileData)
         setSessions(sessionsData || [])
         setDailyScenario(scenario)
+        setDailyChallengeCompleted(isCompleted)
       } catch (err: any) {
         console.error('Failed to load dashboard:', err)
         setError(err?.message || 'Failed to load dashboard data')
@@ -211,7 +228,7 @@ export function UserDashboard() {
           <div className="lg:col-span-2">
             <DailyChallengeCard
               scenario={dailyScenario}
-              completed={false}
+              completed={dailyChallengeCompleted}
               loading={false}
             />
           </div>
