@@ -9,7 +9,6 @@ import { toast } from 'sonner'
 import { ScoreDisplay } from '@/components/feedback/ScoreDisplay'
 import { OverallSummary } from '@/components/feedback/OverallSummary'
 import { CoachingTips } from '@/components/feedback/CoachingTips'
-import { AudioPlayback } from '@/components/feedback/AudioPlayback'
 import { TranscriptView } from '@/components/feedback/TranscriptView'
 import { ImprovementBadge } from '@/components/feedback/ImprovementBadge'
 import { ActionButtons } from '@/components/feedback/ActionButtons'
@@ -201,11 +200,8 @@ export default function FeedbackPage() {
         {/* Coaching Tips */}
         <CoachingTips coaching={feedback.coaching} scores={feedback.scores} />
 
-        {/* Audio and Transcript */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <AudioPlayback audioUrl={audioUrl} transcript={transcript} />
-          <TranscriptView transcript={transcript} detectedMetrics={feedback.detectedMetrics} />
-        </div>
+        {/* Transcript */}
+        <TranscriptView transcript={transcript} detectedMetrics={feedback.detectedMetrics} />
 
         {/* Action Buttons */}
         <ActionButtons scenarioId={scenarioId} sessionId={sessionId || undefined} />

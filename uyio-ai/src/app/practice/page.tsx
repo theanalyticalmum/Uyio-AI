@@ -299,28 +299,16 @@ export default function PracticePage() {
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                 Recording Complete!
               </h3>
-              <div className="space-y-2 mb-6">
-                <p className="text-gray-600 dark:text-gray-400">
-                  Audio size: {audioBlob ? (audioBlob.size / 1024).toFixed(1) : 0} KB
-                </p>
+              <div className="mb-6">
                 {audioUrl && (
                   <div className="flex items-center justify-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <p className="text-sm text-green-600 dark:text-green-400">
-                      Saved to your account
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                      Recording saved successfully
                     </p>
                   </div>
                 )}
               </div>
-
-              {/* Audio Player (if uploaded) */}
-              {audioUrl && (
-                <div className="mb-6">
-                  <audio controls className="mx-auto" src={audioUrl}>
-                    Your browser does not support the audio element.
-                  </audio>
-                </div>
-              )}
 
               {/* Transcript Display */}
               {transcript && (
