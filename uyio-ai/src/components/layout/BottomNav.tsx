@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Mic, TrendingUp, BookOpen } from 'lucide-react'
 
@@ -26,12 +25,22 @@ export function BottomNav() {
         {navItems.map((item) => {
           const Icon = item.icon
           const active = isActive(item.href)
+          const isOnTargetPage = pathname === item.href
 
           if (item.center) {
+            // Microphone button with smart behavior
             return (
-              <Link
+              <a
                 key={item.href}
                 href={item.href}
+                onClick={(e) => {
+                  if (isOnTargetPage) {
+                    // Already on practice page - trigger recording instead of navigating
+                    e.preventDefault()
+                    window.dispatchEvent(new CustomEvent('trigger-recording'))
+                  }
+                  // If not on practice page, let href navigate naturally
+                }}
                 className="flex flex-col items-center justify-center -mt-6"
               >
                 <div
@@ -50,12 +59,13 @@ export function BottomNav() {
                 >
                   {item.label}
                 </span>
-              </Link>
+              </a>
             )
           }
 
+          // Regular nav items
           return (
-            <Link
+            <a
               key={item.href}
               href={item.href}
               className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
@@ -64,7 +74,7 @@ export function BottomNav() {
             >
               <Icon className="w-6 h-6" />
               <span className="text-xs mt-1 font-medium">{item.label}</span>
-            </Link>
+            </a>
           )
         })}
       </div>

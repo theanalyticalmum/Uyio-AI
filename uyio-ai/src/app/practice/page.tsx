@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { ScenarioCard } from '@/components/practice/ScenarioCard'
-import { VoiceRecorder } from '@/components/practice/VoiceRecorder'
+import { VoiceRecorder, type VoiceRecorderRef } from '@/components/practice/VoiceRecorder'
 import { TranscriptionStatus } from '@/components/practice/TranscriptionStatus'
 import { generateScenario } from '@/lib/scenarios/generator'
 import { markScenarioUsed } from '@/lib/scenarios/tracker'
@@ -25,6 +25,7 @@ type ProcessingState =
 export default function PracticePage() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const recorderRef = useRef<VoiceRecorderRef>(null)
   const [scenario, setScenario] = useState<Scenario | null>(null)
   const [loading, setLoading] = useState(true)
   const [processingState, setProcessingState] = useState<ProcessingState>('idle')
@@ -81,6 +82,19 @@ export default function PracticePage() {
     // Cleanup timeout on unmount
     return () => clearTimeout(timeoutId)
   }, [router])
+
+  // Listen for recording trigger from bottom navigation
+  useEffect(() => {
+    const handleTriggerRecording = () => {
+      // Only trigger if we're in idle state and have a scenario loaded
+      if (processingState === 'idle' && scenario && recorderRef.current) {
+        recorderRef.current.startRecording()
+      }
+    }
+    
+    window.addEventListener('trigger-recording', handleTriggerRecording)
+    return () => window.removeEventListener('trigger-recording', handleTriggerRecording)
+  }, [processingState, scenario])
 
   const loadScenario = () => {
     setLoading(true)
@@ -272,6 +286,7 @@ export default function PracticePage() {
                 Ready to Practice?
               </h3>
               <VoiceRecorder
+                ref={recorderRef}
                 onRecordingComplete={handleRecordingComplete}
                 maxDuration={scenario.time_limit_sec}
               />

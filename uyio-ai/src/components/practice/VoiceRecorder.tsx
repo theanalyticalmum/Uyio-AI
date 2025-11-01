@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useImperativeHandle, forwardRef } from 'react'
 import { Mic, Square } from 'lucide-react'
 import { useAudioRecorder } from '@/hooks/useAudioRecorder'
 import { toast } from 'sonner'
@@ -13,11 +13,15 @@ interface VoiceRecorderProps {
   autoUpload?: boolean // automatically upload after recording
 }
 
-export function VoiceRecorder({ 
+export interface VoiceRecorderRef {
+  startRecording: () => void
+}
+
+export const VoiceRecorder = forwardRef<VoiceRecorderRef, VoiceRecorderProps>(({ 
   onRecordingComplete, 
   maxDuration = 180,
   autoUpload = true 
-}: VoiceRecorderProps) {
+}, ref) => {
   const { startRecording, stopRecording, isRecording, recordingTime, error } = useAudioRecorder()
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -30,6 +34,15 @@ export function VoiceRecorder({
       toast.error(error)
     }
   }
+
+  // Expose startRecording to parent component via ref
+  useImperativeHandle(ref, () => ({
+    startRecording: () => {
+      if (!isRecording && !isUploading && !error) {
+        handleStartRecording()
+      }
+    }
+  }))
 
   const uploadRecording = async (blob: Blob): Promise<string | undefined> => {
     setIsUploading(true)
@@ -174,5 +187,7 @@ export function VoiceRecorder({
       </div>
     </div>
   )
-}
+})
+
+VoiceRecorder.displayName = 'VoiceRecorder'
 
