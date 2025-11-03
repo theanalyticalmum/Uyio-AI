@@ -31,7 +31,8 @@ export function TranscriptView({ transcript, detectedMetrics }: TranscriptViewPr
     const words = text.split(/(\s+)/) // Split by spaces, keeping spaces
     return words.map((word, index) => {
       const cleanWord = word.toLowerCase().replace(/[.,!?;:]$/, '') // Remove punctuation for matching
-      if (FILLER_WORDS.includes(cleanWord)) {
+      // Cast FILLER_WORDS to readonly string[] for includes() to accept any string
+      if ((FILLER_WORDS as readonly string[]).includes(cleanWord)) {
         return (
           <span key={index} className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1 rounded">
             {word}
