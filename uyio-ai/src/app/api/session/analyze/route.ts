@@ -42,6 +42,13 @@ export async function POST(request: Request) {
       )
     }
 
+    if (!duration || typeof duration !== 'number' || duration <= 0) {
+      return NextResponse.json(
+        { error: 'Missing or invalid duration (must be positive number in seconds)' },
+        { status: 400 }
+      )
+    }
+
     // Check transcript isn't empty or too short
     const wordCount = transcript.trim().split(/\s+/).length
     if (wordCount < 5) {
@@ -126,8 +133,9 @@ export async function POST(request: Request) {
 
 export async function GET() {
   return NextResponse.json({
-    message: 'Use POST with { transcript: string, scenarioId: string, duration?: number } to analyze',
+    message: 'Use POST with { transcript: string, scenarioId: string, duration: number } to analyze',
     endpoint: '/api/session/analyze',
+    note: 'duration is required (in seconds) for accurate WPM calculation',
   })
 }
 

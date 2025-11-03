@@ -3,7 +3,7 @@
 
 import { useState, useCallback } from 'react'
 import { FileText, Copy, Check, ChevronDown, ChevronUp, ZoomIn, ZoomOut } from 'lucide-react'
-import { FILLER_WORDS } from '@/lib/openai/prompts'
+import { FILLER_WORDS } from '@/lib/constants/fillers'
 
 interface TranscriptViewProps {
   transcript: string
