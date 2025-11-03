@@ -2,14 +2,15 @@
 'use client'
 
 import { ScoreCard } from './ScoreCard'
-import type { FeedbackScores, CoachingTips } from '@/types/feedback'
+import type { FeedbackResult } from '@/types/feedback'
 
 interface ScoreDisplayProps {
-  scores: FeedbackScores
-  coaching: CoachingTips
+  feedback: FeedbackResult
 }
 
-export function ScoreDisplay({ scores, coaching }: ScoreDisplayProps) {
+export function ScoreDisplay({ feedback }: ScoreDisplayProps) {
+  const { scores, coaching, detectedMetrics, detailedCoaching } = feedback
+  
   // Calculate overall average
   const overall = Math.round(
     ((scores.clarity + scores.confidence + scores.logic + scores.pacing + scores.fillers) / 5) * 10
@@ -31,10 +32,85 @@ export function ScoreDisplay({ scores, coaching }: ScoreDisplayProps) {
     return 'Keep practicing! 🎯'
   }
 
+  // Prepare objective data for pacing
+  const pacingData = {
+    primaryMetric: `${detectedMetrics.wpm} words/minute`,
+    checkmarks: [
+      detectedMetrics.wpm >= 140 && detectedMetrics.wpm <= 160
+        ? 'Perfect conversational pace'
+        : detectedMetrics.wpm < 140
+        ? 'Measured pace for clarity'
+        : 'Energetic pace',
+      'Maintained consistent rhythm',
+    ],
+    tip: coaching.pacing,
+  }
+
+  // Prepare objective data for fillers
+  const topFillers = Object.entries(detectedMetrics.fillerBreakdown || {})
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 2)
+    .map(([word, count]) => `"${word}" (${count}×)`)
+    .join(', ')
+
+  const fillersData = {
+    primaryMetric: `${detectedMetrics.fillerCount} filler word${detectedMetrics.fillerCount === 1 ? '' : 's'} (${detectedMetrics.fillerRate}%)`,
+    checkmarks:
+      detectedMetrics.fillerCount === 0
+        ? ['No fillers detected!', 'Excellent self-control']
+        : [
+            topFillers ? `Most used: ${topFillers}` : 'Scattered filler usage',
+            detectedMetrics.fillerRate < 5 ? 'Acceptable control' : 'Room for improvement',
+          ],
+    tip: coaching.fillers,
+  }
+
+  // Prepare qualitative data (if detailedCoaching exists, extract from it; otherwise use simple tips)
+  const clarityData = detailedCoaching?.clarity
+    ? {
+        strengths: [detailedCoaching.clarity.example || 'Clear communication'],
+        weakness: detailedCoaching.clarity.reason.includes('but') 
+          ? detailedCoaching.clarity.reason.split('but')[1]?.trim() 
+          : undefined,
+        tip: detailedCoaching.clarity.tip,
+      }
+    : {
+        strengths: [coaching.clarity],
+        tip: coaching.clarity,
+      }
+
+  const confidenceData = detailedCoaching?.confidence
+    ? {
+        strengths: [detailedCoaching.confidence.example || 'Confident delivery'],
+        weakness: detailedCoaching.confidence.reason.includes('but')
+          ? detailedCoaching.confidence.reason.split('but')[1]?.trim()
+          : undefined,
+        tip: detailedCoaching.confidence.tip,
+      }
+    : {
+        strengths: [coaching.confidence],
+        tip: coaching.confidence,
+      }
+
+  const logicData = detailedCoaching?.logic
+    ? {
+        strengths: [detailedCoaching.logic.example || 'Logical structure'],
+        weakness: detailedCoaching.logic.reason.includes('but')
+          ? detailedCoaching.logic.reason.split('but')[1]?.trim()
+          : undefined,
+        tip: detailedCoaching.logic.tip,
+      }
+    : {
+        strengths: [coaching.logic],
+        tip: coaching.logic,
+      }
+
   return (
     <div className="space-y-6">
       {/* Overall Score Badge */}
-      <div className={`bg-gradient-to-r ${getOverallColor(overall)} rounded-2xl p-6 text-white shadow-lg text-center`}>
+      <div
+        className={`bg-gradient-to-r ${getOverallColor(overall)} rounded-2xl p-6 text-white shadow-lg text-center`}
+      >
         <h2 className="text-5xl font-bold mb-2">{overall}/10</h2>
         <p className="text-xl font-semibold">{getEncouragementMessage(overall)}</p>
         <p className="text-sm mt-1 text-white/80">Overall Performance</p>
@@ -42,13 +118,37 @@ export function ScoreDisplay({ scores, coaching }: ScoreDisplayProps) {
 
       {/* Individual Score Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <ScoreCard metric="Clarity" score={scores.clarity} tip={coaching.clarity} delay={0} />
-        <ScoreCard metric="Confidence" score={scores.confidence} tip={coaching.confidence} delay={100} />
-        <ScoreCard metric="Logic" score={scores.logic} tip={coaching.logic} delay={200} />
-        <ScoreCard metric="Pacing" score={scores.pacing} tip={coaching.pacing} delay={300} />
-        <ScoreCard metric="Fillers" score={scores.fillers} tip={coaching.fillers} delay={400} />
+        <ScoreCard
+          metric="Clarity"
+          score={scores.clarity}
+          qualitativeData={clarityData}
+          delay={0}
+        />
+        <ScoreCard
+          metric="Confidence"
+          score={scores.confidence}
+          qualitativeData={confidenceData}
+          delay={100}
+        />
+        <ScoreCard
+          metric="Logic"
+          score={scores.logic}
+          qualitativeData={logicData}
+          delay={200}
+        />
+        <ScoreCard
+          metric="Pacing"
+          score={scores.pacing}
+          objectiveData={pacingData}
+          delay={300}
+        />
+        <ScoreCard
+          metric="Fillers"
+          score={scores.fillers}
+          objectiveData={fillersData}
+          delay={400}
+        />
       </div>
     </div>
   )
 }
-

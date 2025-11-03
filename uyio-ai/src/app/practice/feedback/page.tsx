@@ -188,7 +188,7 @@ export default function FeedbackPage() {
         />
 
         {/* Score Display */}
-        <ScoreDisplay scores={feedback.scores} coaching={feedback.coaching} />
+        <ScoreDisplay feedback={feedback} />
 
         {/* Overall Summary */}
         <OverallSummary

@@ -31,6 +31,7 @@ export default function PracticePage() {
   const [processingState, setProcessingState] = useState<ProcessingState>('idle')
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  const [recordingDuration, setRecordingDuration] = useState<number>(0)
   const [transcript, setTranscript] = useState<string>('')
   const [feedback, setFeedback] = useState<FeedbackResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -115,9 +116,10 @@ export default function PracticePage() {
     setLoading(false)
   }
 
-  const handleRecordingComplete = async (blob: Blob, url?: string) => {
+  const handleRecordingComplete = async (blob: Blob, url: string | undefined, duration: number) => {
     setAudioBlob(blob)
     setAudioUrl(url || null)
+    setRecordingDuration(duration) // Store actual recording duration
     setError(null)
     
     // Mark scenario as used
@@ -173,6 +175,7 @@ export default function PracticePage() {
         body: JSON.stringify({
           transcript: transcriptText,
           scenarioId: scenario?.id,
+          duration: recordingDuration, // Pass actual recording duration
         }),
       })
 
@@ -192,7 +195,7 @@ export default function PracticePage() {
         transcript: transcriptText,
         audioUrl: audioUrl!,
         scenarioId: scenario?.id || '',
-        duration: audioBlob ? Math.round(audioBlob.size / 1000) : 0, // Rough estimate
+        duration: recordingDuration, // Use actual recording duration
         isDailyChallenge: searchParams.get('daily') === 'true',
       }
       

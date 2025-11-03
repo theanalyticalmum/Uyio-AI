@@ -8,7 +8,7 @@ import { UploadStatus } from './UploadStatus'
 import { convertBlobToFile } from '@/utils/audio'
 
 interface VoiceRecorderProps {
-  onRecordingComplete: (audioBlob: Blob, audioUrl?: string) => void
+  onRecordingComplete: (audioBlob: Blob, audioUrl: string | undefined, duration: number) => void
   maxDuration?: number // in seconds
   autoUpload?: boolean // automatically upload after recording
 }
@@ -95,12 +95,15 @@ export const VoiceRecorder = forwardRef<VoiceRecorderRef, VoiceRecorderProps>(({
     const blob = await stopRecording()
     if (!blob) return
 
+    // Capture actual recording duration
+    const actualDuration = recordingTime
+
     // If auto-upload is enabled, upload the recording
     if (autoUpload) {
       const audioUrl = await uploadRecording(blob)
-      onRecordingComplete(blob, audioUrl)
+      onRecordingComplete(blob, audioUrl, actualDuration)
     } else {
-      onRecordingComplete(blob)
+      onRecordingComplete(blob, undefined, actualDuration)
     }
   }
 
