@@ -35,6 +35,7 @@ export default function PracticePage() {
   const [transcript, setTranscript] = useState<string>('')
   const [feedback, setFeedback] = useState<FeedbackResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isDailyChallenge, setIsDailyChallenge] = useState<boolean>(false)
 
   // Check authentication with timeout - redirect guests to /practice/guest
   useEffect(() => {
@@ -97,22 +98,58 @@ export default function PracticePage() {
     return () => window.removeEventListener('trigger-recording', handleTriggerRecording)
   }, [processingState, scenario])
 
-  const loadScenario = () => {
+  const loadScenario = async () => {
     setLoading(true)
     
-    // Get filters from URL params
-    const goal = searchParams.get('goal') as any
-    const context = searchParams.get('context') as any
-    const difficulty = searchParams.get('difficulty') as any
+    const isDaily = searchParams.get('daily') === 'true'
     
-    // Generate scenario
-    const newScenario = generateScenario({
-      goal,
-      context,
-      difficulty,
-    })
+    if (isDaily) {
+      // Fetch today's challenge from API (user context handled server-side)
+      try {
+        const response = await fetch('/api/scenario/daily')
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch daily challenge')
+        }
+        
+        const data = await response.json()
+        
+        if (data.scenario) {
+          setScenario(data.scenario)
+          setIsDailyChallenge(true) // Track for session saving
+          
+          // Optional: Show if already completed
+          if (data.completed) {
+            toast.info('You\'ve already completed today\'s challenge!')
+          }
+        } else {
+          throw new Error('No daily challenge available')
+        }
+      } catch (error) {
+        console.error('Failed to fetch daily challenge:', error)
+        toast.error('Failed to load daily challenge. Loading random scenario...')
+        
+        // Fallback to random scenario
+        const newScenario = generateScenario({})
+        setScenario(newScenario)
+        setIsDailyChallenge(false)
+      }
+    } else {
+      // Regular practice mode
+      const goal = searchParams.get('goal') as any
+      const context = searchParams.get('context') as any
+      const difficulty = searchParams.get('difficulty') as any
+      
+      const newScenario = generateScenario({
+        goal,
+        context,
+        difficulty,
+      })
+      
+      setScenario(newScenario)
+      setIsDailyChallenge(false)
+    }
     
-    setScenario(newScenario)
     setLoading(false)
   }
 
@@ -196,7 +233,7 @@ export default function PracticePage() {
         audioUrl: audioUrl!,
         scenarioId: scenario?.id || '',
         duration: recordingDuration, // Use actual recording duration
-        isDailyChallenge: searchParams.get('daily') === 'true',
+        isDailyChallenge: isDailyChallenge, // Use state variable
       }
       
       sessionStorage.setItem('feedbackData', JSON.stringify(feedbackData))
