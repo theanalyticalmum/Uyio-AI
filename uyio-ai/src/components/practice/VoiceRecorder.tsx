@@ -92,11 +92,12 @@ export const VoiceRecorder = forwardRef<VoiceRecorderRef, VoiceRecorderProps>(({
   }
 
   const handleStopRecording = async () => {
-    const blob = await stopRecording()
+    const { blob, duration } = await stopRecording()
     if (!blob) return
 
-    // Capture actual recording duration
-    const actualDuration = recordingTime
+    // Use precise duration from performance.now() calculation
+    // This handles sub-second recordings correctly (e.g., 0.5s instead of 0s)
+    const actualDuration = duration
 
     // If auto-upload is enabled, upload the recording
     if (autoUpload) {

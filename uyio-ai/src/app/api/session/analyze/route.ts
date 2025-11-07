@@ -42,9 +42,10 @@ export async function POST(request: Request) {
       )
     }
 
+    // Validate duration (accepts decimals like 0.5 for sub-second recordings)
     if (!duration || typeof duration !== 'number' || duration <= 0) {
       return NextResponse.json(
-        { error: 'Missing or invalid duration (must be positive number in seconds)' },
+        { error: 'Missing or invalid duration (must be positive number in seconds, decimals allowed)' },
         { status: 400 }
       )
     }

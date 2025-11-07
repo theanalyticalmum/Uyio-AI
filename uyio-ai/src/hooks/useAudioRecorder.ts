@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 
 interface UseAudioRecorderReturn {
   startRecording: () => Promise<void>
-  stopRecording: () => Promise<Blob | null>
+  stopRecording: () => Promise<{ blob: Blob | null; duration: number }>
   isRecording: boolean
   recordingTime: number
   error: string | null
@@ -18,6 +18,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const startTimeRef = useRef<number>(0) // Precise start time using performance.now()
 
   // Cleanup on unmount
   useEffect(() => {
@@ -60,8 +61,11 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
       mediaRecorder.start()
       setIsRecording(true)
       setRecordingTime(0)
+      
+      // Capture precise start time for accurate duration calculation
+      startTimeRef.current = performance.now()
 
-      // Start timer
+      // Start timer (for UI display only, actual duration calculated on stop)
       timerRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1)
       }, 1000)
@@ -71,15 +75,20 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     }
   }
 
-  const stopRecording = (): Promise<Blob | null> => {
+  const stopRecording = (): Promise<{ blob: Blob | null; duration: number }> => {
     return new Promise((resolve) => {
       if (!mediaRecorderRef.current) {
-        resolve(null)
+        resolve({ blob: null, duration: 0 })
         return
       }
 
       mediaRecorderRef.current.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
+        
+        // Calculate precise duration in seconds (with decimal precision)
+        const endTime = performance.now()
+        const durationMs = endTime - startTimeRef.current
+        const duration = durationMs / 1000 // Convert to seconds with decimals
         
         // Stop all tracks
         const stream = mediaRecorderRef.current?.stream
@@ -91,7 +100,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
         }
 
         setIsRecording(false)
-        resolve(blob)
+        resolve({ blob, duration })
       }
 
       mediaRecorderRef.current.stop()
