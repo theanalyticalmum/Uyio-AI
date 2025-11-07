@@ -3,8 +3,11 @@
  */
 
 export const STORAGE_CONFIG = {
-  // Storage bucket name
+  // Storage bucket name (public - MVP)
   BUCKET: 'recordings',
+  
+  // Private bucket name (production - use with audio-secure.ts)
+  BUCKET_PRIVATE: 'recordings-private',
 
   // File size limits
   MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB

@@ -30,9 +30,9 @@ export async function uploadAudio(
       type: audioBlob.type || 'audio/webm',
     })
 
-    // Upload to Supabase Storage
+    // Upload to Supabase Storage (private bucket)
     const { data, error } = await supabase.storage
-      .from(STORAGE_CONFIG.BUCKET)
+      .from(STORAGE_CONFIG.BUCKET_PRIVATE)
       .upload(filepath, file, {
         contentType: file.type,
         upsert: false,
@@ -48,7 +48,7 @@ export async function uploadAudio(
 
     // Get SIGNED URL instead of public URL (expires after 1 hour)
     const { data: signedUrlData, error: urlError } = await supabase.storage
-      .from(STORAGE_CONFIG.BUCKET)
+      .from(STORAGE_CONFIG.BUCKET_PRIVATE)
       .createSignedUrl(data.path, 3600) // 1 hour expiry
 
     if (urlError || !signedUrlData) {
@@ -88,7 +88,7 @@ export async function refreshSignedUrl(
   try {
 
     const { data, error } = await supabase.storage
-      .from(STORAGE_CONFIG.BUCKET)
+      .from(STORAGE_CONFIG.BUCKET_PRIVATE)
       .createSignedUrl(filepath, expiresIn)
 
     if (error || !data) {
@@ -122,8 +122,8 @@ export async function deleteAudio(
 ): Promise<{ success: boolean; error?: string }> {
   try {
 
-    // Delete from storage
-    const { error } = await supabase.storage.from(STORAGE_CONFIG.BUCKET).remove([filepath])
+    // Delete from storage (private bucket)
+    const { error } = await supabase.storage.from(STORAGE_CONFIG.BUCKET_PRIVATE).remove([filepath])
 
     if (error) {
       console.error('Delete error:', error)
@@ -144,13 +144,13 @@ export async function deleteAudio(
 }
 
 /**
- * Check if recordings bucket exists and is properly configured
+ * Check if private recordings bucket exists and is properly configured
  * 
  * @param supabase - Supabase client instance (pass from API route for proper auth context)
  */
 export async function checkRecordingsBucket(supabase: SupabaseClient): Promise<boolean> {
   try {
-    const { data, error } = await supabase.storage.getBucket(STORAGE_CONFIG.BUCKET)
+    const { data, error } = await supabase.storage.getBucket(STORAGE_CONFIG.BUCKET_PRIVATE)
 
     if (error || !data) {
       console.warn('Recordings bucket not found or not accessible')
