@@ -2,11 +2,31 @@ import { NextResponse } from 'next/server'
 import { getDailyChallenge } from '@/lib/scenarios/generator'
 import { createClient } from '@/lib/supabase/server'
 import type { Goal } from '@/types/scenario'
+import { generousRateLimit, getIdentifier, formatResetTime } from '@/lib/rateLimit'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   try {
+    // 🔒 Rate limiting: 60 requests per minute per IP (generous for daily challenge)
+    const identifier = getIdentifier(request)
+    const rateLimitResult = await generousRateLimit.check(identifier)
+    
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { 
+          error: `Too many requests. Please try again in ${formatResetTime(rateLimitResult.reset)}.`,
+          retryAfter: rateLimitResult.reset,
+        },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+          },
+        }
+      )
+    }
+    
     const { searchParams } = new URL(request.url)
     const goal = searchParams.get('goal') as Goal | null
 
