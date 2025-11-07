@@ -21,7 +21,8 @@
     "react-audio-voice-recorder": "^2.2.0",
     "react-dom": "^18.2.0",
     "recharts": "^2.10.3",
-    "sonner": "^1.2.0"
+    "sonner": "^1.2.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",
