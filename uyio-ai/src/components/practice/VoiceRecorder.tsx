@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useImperativeHandle, forwardRef } from 'react'
+import { useState, useEffect, useImperativeHandle, forwardRef } from 'react'
 import { Mic, Square } from 'lucide-react'
 import { useAudioRecorder } from '@/hooks/useAudioRecorder'
 import { toast } from 'sonner'
@@ -113,10 +113,12 @@ export const VoiceRecorder = forwardRef<VoiceRecorderRef, VoiceRecorderProps>(({
     toast.info('Please record again to retry')
   }
 
-  // Auto-stop when max duration reached
-  if (isRecording && recordingTime >= maxDuration) {
-    handleStopRecording()
-  }
+  // Auto-stop when max duration reached (moved to useEffect to avoid side effects in render)
+  useEffect(() => {
+    if (isRecording && recordingTime >= maxDuration) {
+      handleStopRecording()
+    }
+  }, [recordingTime, maxDuration, isRecording])
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60)
