@@ -58,8 +58,8 @@ export async function POST(request: Request) {
     // Convert File to Blob if needed
     const audioBlob = new Blob([await audioFile.arrayBuffer()], { type: audioFile.type })
 
-    // Upload to Supabase Storage
-    const result = await uploadAudio(audioBlob, userId)
+    // Upload to Supabase Storage (pass server client for proper auth context)
+    const result = await uploadAudio(audioBlob, userId, supabase)
 
     if (!result.success) {
       return NextResponse.json(

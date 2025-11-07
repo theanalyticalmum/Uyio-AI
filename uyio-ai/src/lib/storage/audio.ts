@@ -1,6 +1,6 @@
-import { createClient } from '@/lib/supabase/client'
 import { STORAGE_CONFIG, UPLOAD_ERRORS } from './config'
 import { generateAudioFilename } from '@/utils/audio'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 /**
  * ⚠️ MVP VERSION - PUBLIC BUCKET
@@ -17,13 +17,17 @@ import { generateAudioFilename } from '@/utils/audio'
 
 /**
  * Upload audio blob to Supabase Storage
+ * 
+ * @param audioBlob - The audio file as a Blob
+ * @param userId - User ID for file organization
+ * @param supabase - Supabase client instance (pass from API route for proper auth context)
  */
 export async function uploadAudio(
   audioBlob: Blob,
-  userId: string
+  userId: string,
+  supabase: SupabaseClient
 ): Promise<{ success: boolean; audioUrl?: string; error?: string }> {
   try {
-    const supabase = createClient()
 
     // Generate filename
     const filename = generateAudioFilename(userId)
@@ -70,10 +74,15 @@ export async function uploadAudio(
 
 /**
  * Delete audio file from storage
+ * 
+ * @param audioUrl - Full URL of the audio file to delete
+ * @param supabase - Supabase client instance (pass from API route for proper auth context)
  */
-export async function deleteAudio(audioUrl: string): Promise<{ success: boolean; error?: string }> {
+export async function deleteAudio(
+  audioUrl: string,
+  supabase: SupabaseClient
+): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = createClient()
 
     // Extract path from URL
     const url = new URL(audioUrl)
@@ -111,9 +120,11 @@ export async function deleteAudio(audioUrl: string): Promise<{ success: boolean;
 
 /**
  * Get public URL for audio file
+ * 
+ * @param path - Storage path (e.g., "userId/filename.webm")
+ * @param supabase - Supabase client instance (pass from API route for proper auth context)
  */
-export function getAudioUrl(path: string): string {
-  const supabase = createClient()
+export function getAudioUrl(path: string, supabase: SupabaseClient): string {
   const {
     data: { publicUrl },
   } = supabase.storage.from(STORAGE_CONFIG.BUCKET).getPublicUrl(path)
@@ -122,10 +133,11 @@ export function getAudioUrl(path: string): string {
 
 /**
  * Check if recordings bucket exists and is properly configured
+ * 
+ * @param supabase - Supabase client instance (pass from API route for proper auth context)
  */
-export async function checkRecordingsBucket(): Promise<boolean> {
+export async function checkRecordingsBucket(supabase: SupabaseClient): Promise<boolean> {
   try {
-    const supabase = createClient()
     const { data, error } = await supabase.storage.getBucket(STORAGE_CONFIG.BUCKET)
 
     if (error || !data) {

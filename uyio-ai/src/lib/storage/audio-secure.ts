@@ -3,19 +3,23 @@
  * Replace audio.ts with this file if you implement the secure storage schema
  */
 
-import { createClient } from '@/lib/supabase/client'
 import { STORAGE_CONFIG, UPLOAD_ERRORS } from './config'
 import { generateAudioFilename } from '@/utils/audio'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 /**
  * Upload audio blob to Supabase Storage (Private Bucket)
+ * 
+ * @param audioBlob - The audio file as a Blob
+ * @param userId - User ID for file organization
+ * @param supabase - Supabase client instance (pass from API route for proper auth context)
  */
 export async function uploadAudio(
   audioBlob: Blob,
-  userId: string
+  userId: string,
+  supabase: SupabaseClient
 ): Promise<{ success: boolean; audioUrl?: string; error?: string }> {
   try {
-    const supabase = createClient()
 
     // Generate filename
     const filename = generateAudioFilename(userId)
@@ -71,13 +75,17 @@ export async function uploadAudio(
 /**
  * Get a new signed URL for an existing recording
  * Call this before playback if the original signed URL expired
+ * 
+ * @param filepath - Storage path (e.g., "userId/filename.webm")
+ * @param expiresIn - URL expiration time in seconds (default: 3600 = 1 hour)
+ * @param supabase - Supabase client instance (pass from API route for proper auth context)
  */
 export async function refreshSignedUrl(
   filepath: string,
-  expiresIn = 3600
+  expiresIn: number = 3600,
+  supabase: SupabaseClient
 ): Promise<{ success: boolean; audioUrl?: string; error?: string }> {
   try {
-    const supabase = createClient()
 
     const { data, error } = await supabase.storage
       .from(STORAGE_CONFIG.BUCKET)
@@ -104,10 +112,15 @@ export async function refreshSignedUrl(
 
 /**
  * Delete audio file from storage
+ * 
+ * @param filepath - Storage path (e.g., "userId/filename.webm")
+ * @param supabase - Supabase client instance (pass from API route for proper auth context)
  */
-export async function deleteAudio(filepath: string): Promise<{ success: boolean; error?: string }> {
+export async function deleteAudio(
+  filepath: string,
+  supabase: SupabaseClient
+): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = createClient()
 
     // Delete from storage
     const { error } = await supabase.storage.from(STORAGE_CONFIG.BUCKET).remove([filepath])
@@ -132,10 +145,11 @@ export async function deleteAudio(filepath: string): Promise<{ success: boolean;
 
 /**
  * Check if recordings bucket exists and is properly configured
+ * 
+ * @param supabase - Supabase client instance (pass from API route for proper auth context)
  */
-export async function checkRecordingsBucket(): Promise<boolean> {
+export async function checkRecordingsBucket(supabase: SupabaseClient): Promise<boolean> {
   try {
-    const supabase = createClient()
     const { data, error } = await supabase.storage.getBucket(STORAGE_CONFIG.BUCKET)
 
     if (error || !data) {
