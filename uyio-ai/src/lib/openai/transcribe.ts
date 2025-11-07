@@ -45,8 +45,8 @@ export async function transcribeFromBlob(audioBlob: Blob): Promise<Transcription
       response_format: 'verbose_json', // Get additional metadata
     })
 
-    // Calculate word count
-    const words = response.text.trim().split(/\s+/)
+    // Calculate word count accurately (filter out empty strings)
+    const words = response.text.trim().split(/\s+/).filter(word => word.length > 0)
     const wordCount = words.length
 
     return {
