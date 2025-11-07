@@ -81,8 +81,25 @@ Benefits:
 
 ### **Step 1: Create Private Bucket in Supabase**
 
-**SQL to Run:**
+**Option A: Use the SQL File (Recommended)**
+
+Copy and paste the complete SQL from `SUPABASE_PRIVATE_STORAGE_SETUP.sql` into the Supabase SQL Editor.
+
+This file:
+- ✅ Handles existing policies (drops and recreates)
+- ✅ Safe to run multiple times
+- ✅ Includes verification queries
+- ✅ Better error handling
+
+**Option B: Manual SQL (if you prefer)**
+
 ```sql
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can upload own recordings" ON storage.objects;
+DROP POLICY IF EXISTS "Users can access own recordings" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete own recordings" ON storage.objects;
+DROP POLICY IF EXISTS "Service role full access" ON storage.objects;
+
 -- Create private recordings bucket
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
@@ -91,7 +108,8 @@ VALUES (
   false, -- PRIVATE!
   10485760, -- 10MB limit
   ARRAY['audio/webm', 'audio/mp4', 'audio/mpeg', 'audio/wav', 'audio/ogg']
-);
+)
+ON CONFLICT (id) DO NOTHING;
 
 -- RLS Policy: Users can only upload their own recordings
 CREATE POLICY "Users can upload own recordings"
