@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createActionClient } from '@/lib/supabase/server'
-import { uploadAudio } from '@/lib/storage/audio'
+import { uploadAudio } from '@/lib/storage/audio-secure' // 🔒 Private storage with signed URLs
 import { validateAudioFile } from '@/utils/audio'
 import { UPLOAD_ERRORS } from '@/lib/storage/config'
 import { moderateRateLimit, getIdentifier, formatResetTime } from '@/lib/rateLimit'
