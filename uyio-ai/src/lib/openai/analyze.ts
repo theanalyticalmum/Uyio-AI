@@ -1,50 +1,9 @@
 import { openai } from './client'
 import { buildAnalysisPrompt, SYSTEM_PROMPT } from './prompts'
+import { parseGPTResponse, type GPTFeedbackResponse } from './validation'
 import { calculateObjectiveMetrics } from '@/lib/analysis/metrics'
 import type { FeedbackResult } from '@/types/feedback'
 import type { Scenario } from '@/types/scenario'
-import { z } from 'zod'
-
-/**
- * Zod schema for validating GPT-4o responses
- * Ensures all required fields exist and have sensible defaults
- * Prevents app crashes from malformed JSON
- */
-const CoachingDetailSchema = z.object({
-  reason: z.string().min(1).default('Unable to analyze this aspect'),
-  example: z.string().min(1).default('No specific example available'),
-  tip: z.string().min(1).default('Continue practicing this skill'),
-  rubricLevel: z.string().min(1).default('N/A'),
-})
-
-const GPTFeedbackSchema = z.object({
-  scores: z.object({
-    clarity: z.number().int().min(0).max(10).default(5),
-    confidence: z.number().int().min(0).max(10).default(5),
-    logic: z.number().int().min(0).max(10).default(5),
-  }),
-  coaching: z.object({
-    clarity: CoachingDetailSchema,
-    confidence: CoachingDetailSchema,
-    logic: CoachingDetailSchema,
-  }),
-  summary: z.string().min(10).default(
-    'Your speech showed both strengths and areas for improvement. Keep practicing to build your communication skills.'
-  ),
-  strengths: z.array(z.string()).min(1).default([
-    'Completed the practice session',
-    'Spoke for the full duration',
-  ]),
-  improvements: z.array(z.string()).min(1).default([
-    'Focus on clarity and structure',
-    'Practice speaking with more confidence',
-  ]),
-  topImprovement: z.string().optional().default(
-    'Practice speaking in a clear, structured manner'
-  ),
-})
-
-type GPTFeedbackResponse = z.infer<typeof GPTFeedbackSchema>
 
 /**
  * Analyze transcript with hybrid approach:
@@ -87,8 +46,8 @@ export async function analyzeTranscript(
       throw new Error('Empty response from GPT-4')
     }
 
-    // STEP 4: Parse GPT response
-    const gptFeedback = parseFeedbackResponse(content)
+    // STEP 4: Parse and validate GPT response using Zod (from validation.ts)
+    const gptFeedback = parseGPTResponse(content)
     
     // STEP 5: Combine objective + qualitative into final result
     const feedback: FeedbackResult = {
@@ -153,48 +112,7 @@ export async function analyzeTranscript(
   }
 }
 
-/**
- * Parse and validate GPT-4 feedback response using Zod
- * Ensures all required fields exist with sensible defaults
- * Prevents app crashes from malformed JSON
- * 
- * @param response - Raw JSON string from GPT-4o
- * @returns Validated and sanitized feedback object
- */
-export function parseFeedbackResponse(response: string): GPTFeedbackResponse {
-  try {
-    // Step 1: Parse JSON (may throw if invalid JSON)
-    const rawData = JSON.parse(response)
-    
-    // Step 2: Validate with Zod (auto-fills missing fields with defaults)
-    const validatedData = GPTFeedbackSchema.parse(rawData)
-    
-    return validatedData
-  } catch (error) {
-    // Log the error for debugging
-    console.error('GPT response validation failed:', error)
-    console.error('Raw response:', response)
-    
-    // If parsing completely fails, return safe defaults
-    if (error instanceof z.ZodError) {
-      console.error('Zod validation errors:', error.errors)
-      
-      // Attempt to salvage what we can with safeParse
-      const salvaged = GPTFeedbackSchema.safeParse(
-        error.errors.length > 0 ? {} : JSON.parse(response)
-      )
-      
-      if (salvaged.success) {
-        console.warn('Using partially salvaged feedback with defaults')
-        return salvaged.data
-      }
-    }
-    
-    // Last resort: return completely safe defaults
-    console.error('Complete validation failure, using full defaults')
-    return GPTFeedbackSchema.parse({})
-  }
-}
+// parseFeedbackResponse is now in validation.ts and imported as parseGPTResponse
 
 /**
  * Calculate overall score from individual scores

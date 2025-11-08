@@ -9,67 +9,13 @@
  * - Out-of-range scores are clamped
  * - Invalid types are coerced or defaulted
  * 
- * Note: We test the Zod schema directly to avoid OpenAI client initialization in Jest
+ * Note: Uses the actual validation module with complete hierarchical defaults
  */
 
-import { z } from 'zod'
+import { parseGPTResponse } from '@/lib/openai/validation'
 
-// Copy the schema from analyze.ts to test it directly (avoids OpenAI client init)
-const CoachingDetailSchema = z.object({
-  reason: z.string().min(1).default('Unable to analyze this aspect'),
-  example: z.string().min(1).default('No specific example available'),
-  tip: z.string().min(1).default('Continue practicing this skill'),
-  rubricLevel: z.string().min(1).default('N/A'),
-})
-
-const GPTFeedbackSchema = z.object({
-  scores: z.object({
-    clarity: z.number().int().min(0).max(10).default(5),
-    confidence: z.number().int().min(0).max(10).default(5),
-    logic: z.number().int().min(0).max(10).default(5),
-  }),
-  coaching: z.object({
-    clarity: CoachingDetailSchema,
-    confidence: CoachingDetailSchema,
-    logic: CoachingDetailSchema,
-  }),
-  summary: z.string().min(10).default(
-    'Your speech showed both strengths and areas for improvement. Keep practicing to build your communication skills.'
-  ),
-  strengths: z.array(z.string()).min(1).default([
-    'Completed the practice session',
-    'Spoke for the full duration',
-  ]),
-  improvements: z.array(z.string()).min(1).default([
-    'Focus on clarity and structure',
-    'Practice speaking with more confidence',
-  ]),
-  topImprovement: z.string().optional().default(
-    'Practice speaking in a clear, structured manner'
-  ),
-})
-
-// Test implementation of parseFeedbackResponse
-function parseFeedbackResponse(response: string): z.infer<typeof GPTFeedbackSchema> {
-  try {
-    const rawData = JSON.parse(response)
-    const validatedData = GPTFeedbackSchema.parse(rawData)
-    return validatedData
-  } catch (error) {
-    console.error('GPT response validation failed:', error)
-    console.error('Raw response:', response)
-    
-    if (error instanceof z.ZodError) {
-      console.error('Zod validation errors:', error.errors)
-      const salvaged = GPTFeedbackSchema.safeParse({})
-      if (salvaged.success) {
-        return salvaged.data
-      }
-    }
-    
-    return GPTFeedbackSchema.parse({})
-  }
-}
+// Alias for compatibility with existing test assertions
+const parseFeedbackResponse = parseGPTResponse
 
 describe('LLM Response Validation - Critical Path', () => {
   describe('Malformed JSON Handling', () => {
