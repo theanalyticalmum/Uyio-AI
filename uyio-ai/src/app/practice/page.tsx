@@ -165,15 +165,16 @@ export default function PracticePage() {
     }
 
     // If upload succeeded, start transcription
+    // IMPORTANT: Pass duration to transcription handler to avoid async state issues
     if (url) {
-      await handleTranscription(url)
+      await handleTranscription(url, duration)
     } else {
       setProcessingState('complete')
       toast.error('Upload failed. Cannot transcribe.')
     }
   }
 
-  const handleTranscription = async (audioUrl: string) => {
+  const handleTranscription = async (audioUrl: string, duration: number) => {
     setProcessingState('transcribing')
     
     try {
@@ -192,8 +193,8 @@ export default function PracticePage() {
       setTranscript(data.transcript)
       toast.success('Transcription complete!')
       
-      // Start analysis
-      await handleAnalysis(data.transcript)
+      // Start analysis - pass duration directly to avoid async state issues
+      await handleAnalysis(data.transcript, duration)
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to transcribe audio'
       setError(errorMsg)
@@ -202,17 +203,26 @@ export default function PracticePage() {
     }
   }
 
-  const handleAnalysis = async (transcriptText: string) => {
+  const handleAnalysis = async (transcriptText: string, duration: number) => {
     setProcessingState('analyzing')
     
     try {
+      // Debug: Log the duration being sent
+      console.log('📊 Sending to analyze API:', {
+        transcriptLength: transcriptText.length,
+        scenarioId: scenario?.id,
+        duration: duration,
+        durationType: typeof duration,
+        durationValid: duration > 0,
+      })
+
       const response = await fetch('/api/session/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           transcript: transcriptText,
           scenarioId: scenario?.id,
-          duration: recordingDuration, // Pass actual recording duration
+          duration: duration, // Use parameter instead of state to avoid async issues
         }),
       })
 
