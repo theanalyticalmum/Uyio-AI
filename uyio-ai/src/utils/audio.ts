@@ -47,8 +47,14 @@ export function validateAudioFile(file: File): {
     }
   }
 
-  // Check file type
-  if (!STORAGE_CONFIG.ALLOWED_AUDIO_TYPES.includes(file.type as any)) {
+  // Check file type (support MIME types with or without codecs)
+  // e.g., "audio/webm;codecs=opus" should match "audio/webm"
+  const fileTypeBase = file.type.split(';')[0] // Get base type without codec
+  const isValidType = STORAGE_CONFIG.ALLOWED_AUDIO_TYPES.some(
+    allowedType => fileTypeBase === allowedType || file.type.startsWith(allowedType)
+  )
+  
+  if (!isValidType) {
     return {
       valid: false,
       error: `Invalid audio format: ${file.type}. Supported formats: ${STORAGE_CONFIG.ALLOWED_AUDIO_TYPES.join(', ')}`,

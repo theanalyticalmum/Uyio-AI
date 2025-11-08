@@ -34,11 +34,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No audio file provided' }, { status: 400 })
     }
 
+    // Log received file info for debugging
+    console.log('📁 Received audio file:', {
+      name: audioFile.name,
+      type: audioFile.type,
+      size: `${(audioFile.size / 1024).toFixed(1)}KB`,
+      sizeBytes: audioFile.size,
+    })
+
     // Validate file
     const validation = validateAudioFile(audioFile)
     if (!validation.valid) {
+      console.error('❌ File validation failed:', validation.error)
       return NextResponse.json({ error: validation.error }, { status: 400 })
     }
+    
+    console.log('✅ File validation passed')
 
     // Get user ID (or generate guest ID)
     const supabase = await createActionClient()
