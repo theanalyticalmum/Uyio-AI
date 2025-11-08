@@ -71,13 +71,15 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
         }
       }
 
+      // IMPORTANT: Set start time BEFORE changing state to avoid race conditions
+      // If we set isRecording(true) before startTimeRef, a re-render could trigger
+      // auto-stop before startTimeRef is initialized, causing invalid duration
+      startTimeRef.current = performance.now()
+      
       // Start recording
       mediaRecorder.start()
       setIsRecording(true)
       setRecordingTime(0)
-      
-      // Capture precise start time for accurate duration calculation
-      startTimeRef.current = performance.now()
 
       // Start timer (for UI display only, actual duration calculated on stop)
       timerRef.current = setInterval(() => {
@@ -103,7 +105,19 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
         // Calculate precise duration in seconds (with decimal precision)
         const endTime = performance.now()
         const durationMs = endTime - startTimeRef.current
-        const duration = durationMs / 1000 // Convert to seconds with decimals
+        let duration = durationMs / 1000 // Convert to seconds with decimals
+        
+        // Safety guard: Ensure duration is valid
+        // If startTimeRef wasn't initialized properly (edge case), use recordingTime as fallback
+        if (duration <= 0 || !isFinite(duration) || duration > 3600) {
+          console.warn('Invalid duration calculated, using fallback:', { 
+            duration, 
+            startTime: startTimeRef.current,
+            endTime,
+            fallback: recordingTime || 1
+          })
+          duration = recordingTime || 1 // Use UI timer as fallback, minimum 1 second
+        }
         
         // Stop all tracks
         const stream = mediaRecorderRef.current?.stream
