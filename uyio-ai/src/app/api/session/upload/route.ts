@@ -62,8 +62,18 @@ export async function POST(request: Request) {
     const result = await uploadAudio(audioBlob, userId, supabase)
 
     if (!result.success) {
+      console.error('Upload failed:', {
+        error: result.error,
+        userId,
+        fileSize: audioFile.size,
+        fileType: audioFile.type,
+      })
+      
       return NextResponse.json(
-        { error: result.error || UPLOAD_ERRORS.UPLOAD_FAILED },
+        { 
+          error: result.error || UPLOAD_ERRORS.UPLOAD_FAILED,
+          details: 'Failed to upload to storage. Check if recordings-private bucket exists in Supabase.'
+        },
         { status: 500 }
       )
     }

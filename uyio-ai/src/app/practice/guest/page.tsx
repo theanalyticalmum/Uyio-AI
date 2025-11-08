@@ -91,9 +91,26 @@ export default function GuestPracticePage() {
     await new Promise((resolve) => setTimeout(resolve, 2000))
 
     // Mock transcript and scores for guest preview
+    // Note: Guest practice doesn't actually transcribe or analyze
+    // It provides a realistic preview to encourage signup
     const mockTranscript =
       'Your response was recorded successfully! This is a preview of how your speech would be transcribed. Sign up for a free account to get real AI-powered transcription and detailed feedback on clarity, confidence, pacing, and more.'
-    const mockScore = Math.random() * 3 + 7 // Score between 7-10
+    
+    // Generate score based on recording duration to feel realistic
+    // Silence or very short recordings get lower scores
+    const recordingDuration = 60 - countdown
+    let mockScore: number
+    
+    if (recordingDuration < 5) {
+      // Very short recording = low score
+      mockScore = Math.random() * 2 + 3 // 3-5/10
+    } else if (recordingDuration < 15) {
+      // Short recording = medium score
+      mockScore = Math.random() * 2 + 5 // 5-7/10
+    } else {
+      // Decent recording = good score
+      mockScore = Math.random() * 2 + 7 // 7-9/10
+    }
 
     // Generate feedback based on score
     let feedbackMessage = ''
