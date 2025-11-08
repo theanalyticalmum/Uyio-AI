@@ -262,11 +262,11 @@ export default function PracticePage() {
 
   const handleRetry = async () => {
     if (audioUrl && !transcript) {
-      // Retry transcription
-      await handleTranscription(audioUrl)
+      // Retry transcription (use stored recordingDuration from state)
+      await handleTranscription(audioUrl, recordingDuration)
     } else if (transcript && !feedback) {
-      // Retry analysis
-      await handleAnalysis(transcript)
+      // Retry analysis (use stored recordingDuration from state)
+      await handleAnalysis(transcript, recordingDuration)
     }
   }
 
