@@ -26,7 +26,7 @@ export default function CoursesPage() {
       
       if (insertError) {
         if (insertError.code === '23505') {
-          setError('You're already on the waitlist!')
+          setError('You\'re already on the waitlist!')
         } else {
           setError('Something went wrong. Please try again.')
         }
@@ -45,7 +45,7 @@ export default function CoursesPage() {
       <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">
           <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-8">
-            <h2 className="text-2xl font-bold text-white mb-2">You're on the list!</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">You\'re on the list!</h2>
             <p className="text-gray-300">Check your email for updates about the course launch.</p>
             <p className="text-sm text-gray-500 mt-4">Course launches soon</p>
           </div>
@@ -72,7 +72,7 @@ export default function CoursesPage() {
 
         {/* What You'll Learn Section */}
         <section className="mb-16">
-          <h2 className="text-2xl font-bold text-white mb-8">What You'll Learn</h2>
+          <h2 className="text-2xl font-bold text-white mb-8">What You\'ll Learn</h2>
           <div className="space-y-6">
             {[
               {
@@ -176,7 +176,7 @@ export default function CoursesPage() {
             <li>• Progress tracking across all 7 days</li>
           </ul>
           <p className="text-white font-semibold mt-6">
-            This course doesn't teach communication — it transforms it.
+            This course doesn\'t teach communication — it transforms it.
           </p>
         </section>
 
@@ -211,7 +211,7 @@ export default function CoursesPage() {
               </button>
               
               <p className="text-center text-sm text-gray-500">
-                We'll only email you about the course launch. No spam.
+                We\'ll only email you about the course launch. No spam.
               </p>
             </form>
           </div>
