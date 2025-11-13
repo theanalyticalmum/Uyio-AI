@@ -144,6 +144,17 @@ CREATE TABLE IF NOT EXISTS daily_scenarios (
   UNIQUE(user_id, for_date)
 );
 
+-- ------------------------------------------------------------------------------
+-- COURSE WAITLIST TABLE
+-- Email capture for course launches
+-- Stores emails for waitlist signups
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS course_waitlist (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
 -- ==============================================================================
 -- 3. INDEXES FOR PERFORMANCE
 -- ==============================================================================

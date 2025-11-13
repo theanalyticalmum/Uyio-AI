@@ -28,7 +28,7 @@ export function Navbar() {
   const navLinks = [
     { href: '/practice', label: 'Practice', icon: null },
     { href: '/progress', label: 'Progress', icon: TrendingUp },
-    { href: '/courses', label: 'Courses', icon: BookOpen, badge: 'Soon' },
+    { href: '/courses', label: 'Courses', icon: BookOpen },
   ]
 
   return (

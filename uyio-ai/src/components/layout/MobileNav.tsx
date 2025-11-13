@@ -67,7 +67,7 @@ export function MobileNav() {
   const navItems = [
     { href: '/practice', label: 'Practice', icon: Mic },
     { href: '/progress', label: 'Progress', icon: TrendingUp },
-    { href: '/courses', label: 'Courses', icon: BookOpen, badge: 'Soon' },
+    { href: '/courses', label: 'Courses', icon: BookOpen },
   ]
 
   return (
