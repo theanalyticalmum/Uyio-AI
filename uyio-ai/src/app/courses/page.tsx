@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { 
   Target, Shield, Zap, Mic, Ban, Scale, Trophy,
@@ -13,10 +14,22 @@ import PWAInstallPrompt from '@/components/PWAInstallPrompt'
 // Description: Master confident speaking in 7 days. Join 300+ professionals on the waitlist.
 
 export default function CoursesPage() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [joined, setJoined] = useState(false)
   const [error, setError] = useState('')
+  const [user, setUser] = useState<any>(null)
+
+  // Check user authentication on mount
+  useEffect(() => {
+    const checkUser = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+    }
+    checkUser()
+  }, [])
 
   const handleJoinWaitlist = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,6 +56,15 @@ export default function CoursesPage() {
     }
     
     setLoading(false)
+  }
+
+  // Handle redirect based on authentication status
+  const handleStartPracticing = () => {
+    if (user) {
+      router.push('/practice')  // Signed-in users get full experience
+    } else {
+      router.push('/practice/guest')  // Guests get limited experience
+    }
   }
 
   // Add noindex meta tag for success state
@@ -75,12 +97,12 @@ export default function CoursesPage() {
           <div className="space-y-6">
             <div>
               <h3 className="text-base md:text-lg font-semibold text-white mb-3">Start practicing now</h3>
-              <a 
-                href="/practice/guest"
+              <button
+                onClick={handleStartPracticing}
                 className="block w-full py-3 md:py-4 text-base md:text-lg bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity text-center"
               >
                 Start Practicing Your Speaking →
-              </a>
+              </button>
             </div>
 
             {/* PWA Install Prompt - Contextual */}
