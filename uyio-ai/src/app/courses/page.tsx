@@ -105,7 +105,7 @@ export default function CoursesPage() {
     {
       day: 2,
       icon: <Shield className="w-5 h-5" />,
-      title: 'Sound Confident (Without Feeling It)',
+      title: 'Sound Confident (Even When Nervous)',
       description: 'Voice techniques that project authority even when your mind is nervous.'
     },
     {
@@ -187,10 +187,6 @@ export default function CoursesPage() {
               {
                 title: 'Structured skill progression',
                 description: 'Each day builds on the last: clarity → confidence → quick thinking → articulation → persuasion → performance.'
-              },
-              {
-                title: 'Designed for busy people',
-                description: '15 minutes per day. No fluff. No overwhelm. Just progress.'
               }
             ].map((item, index) => (
               <div key={index} className="border-l-2 border-purple-500/30 pl-4 md:pl-6">
@@ -273,47 +269,66 @@ export default function CoursesPage() {
           </p>
 
           {/* Product Screenshots - Hidden on mobile, visible on desktop */}
-          <div className="hidden md:block space-y-6">
-            <div className="relative group">
-              <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800 group-hover:border-purple-500/30 transition-colors">
-                <img 
-                  src="/screenshots/progress-dashboard.png?v=2" 
-                  alt="Uyio AI Progress Dashboard"
-                  className="w-full h-auto"
-                  loading="lazy"
-                />
+          <div className="hidden md:block">
+            {/* Benefits Row - Connects screenshots to value */}
+            <div className="grid md:grid-cols-3 gap-4 mb-8 text-center">
+              <div className="flex flex-col items-center">
+                <div className="text-purple-400 font-semibold mb-1">See your progress</div>
+                <div className="text-gray-500 text-sm">↓</div>
               </div>
-              <p className="text-sm text-gray-400 mt-2 text-center">
-                Track your improvement across 5 key metrics. See exactly where you&apos;re getting better.
-              </p>
-            </div>
-            
-            <div className="relative group">
-              <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800 group-hover:border-purple-500/30 transition-colors">
-                <img 
-                  src="/screenshots/practice-scenario.png?v=2" 
-                  alt="Uyio AI Practice Scenario"
-                  className="w-full h-auto"
-                  loading="lazy"
-                />
+              <div className="flex flex-col items-center">
+                <div className="text-purple-400 font-semibold mb-1">Practice real scenarios</div>
+                <div className="text-gray-500 text-sm">↓</div>
               </div>
-              <p className="text-sm text-gray-400 mt-2 text-center">
-                Practice real workplace scenarios with guided tips and structure.
-              </p>
+              <div className="flex flex-col items-center">
+                <div className="text-purple-400 font-semibold mb-1">Get AI coaching after every attempt</div>
+                <div className="text-gray-500 text-sm">↓</div>
+              </div>
             </div>
 
-            <div className="relative group">
-              <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800 group-hover:border-purple-500/30 transition-colors">
-                <img 
-                  src="/screenshots/feedback-results.png?v=2" 
-                  alt="Uyio AI Feedback Results"
-                  className="w-full h-auto"
-                  loading="lazy"
-                />
+            {/* Screenshots */}
+            <div className="space-y-6">
+              <div className="relative group">
+                <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800 group-hover:border-purple-500/30 transition-colors">
+                  <img 
+                    src="/screenshots/progress-dashboard.png?v=2" 
+                    alt="Uyio AI Progress Dashboard"
+                    className="w-full h-auto"
+                    loading="lazy"
+                  />
+                </div>
+                <p className="text-sm text-gray-400 mt-2 text-center">
+                  Track your improvement across 5 key metrics. See exactly where you&apos;re getting better.
+                </p>
               </div>
-              <p className="text-sm text-gray-400 mt-2 text-center">
-                Get instant AI coaching with specific, actionable feedback after each practice.
-              </p>
+              
+              <div className="relative group">
+                <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800 group-hover:border-purple-500/30 transition-colors">
+                  <img 
+                    src="/screenshots/practice-scenario.png?v=2" 
+                    alt="Uyio AI Practice Scenario"
+                    className="w-full h-auto"
+                    loading="lazy"
+                  />
+                </div>
+                <p className="text-sm text-gray-400 mt-2 text-center">
+                  Practice realistic workplace scenarios with guided openings and key focus points.
+                </p>
+              </div>
+
+              <div className="relative group">
+                <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800 group-hover:border-purple-500/30 transition-colors">
+                  <img 
+                    src="/screenshots/feedback-results.png?v=2" 
+                    alt="Uyio AI Feedback Results"
+                    className="w-full h-auto"
+                    loading="lazy"
+                  />
+                </div>
+                <p className="text-sm text-gray-400 mt-2 text-center">
+                  Get instant AI coaching with specific, actionable feedback after each practice.
+                </p>
+              </div>
             </div>
           </div>
         </section>
