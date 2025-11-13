@@ -3,47 +3,93 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { GuestLimitBanner } from '@/components/guest/GuestLimitBanner'
-import { SignupPromptModal } from '@/components/auth/SignupPromptModal'
+import { VoiceRecorder } from '@/components/practice/VoiceRecorder'
 import {
   canPracticeAsGuest,
   incrementGuestUsage,
   saveGuestScore,
-  shouldPromptSignup,
   getRemainingSessionsToday,
 } from '@/lib/auth/guest'
 import { toast } from 'sonner'
-import { Mic, Square, Loader2 } from 'lucide-react'
+import { Loader2, Sparkles, Lock } from 'lucide-react'
+import type { Scenario } from '@/types/scenario'
 
-// Simple practice prompts for guest users
-const GUEST_PROMPTS = [
-  "Describe your ideal weekend and what makes it special to you.",
-  "Tell me about a recent accomplishment you're proud of.",
-  "Explain your favorite hobby and why you enjoy it.",
-  "Describe a place you'd love to visit and why.",
-  "Share your thoughts on what makes a great leader.",
-  "Talk about a book or movie that impacted you.",
-  "Describe your morning routine and why it works for you.",
-  "Explain what motivates you to achieve your goals.",
-  "Share your perspective on the importance of learning.",
-  "Describe a challenge you overcame and what you learned.",
+// Guest practice scenarios - simplified format for guests
+const GUEST_SCENARIOS: Scenario[] = [
+  {
+    id: 'guest-1',
+    goal: 'clarity',
+    context: 'everyday',
+    difficulty: 'easy',
+    objective: 'Share personal experiences clearly',
+    prompt_text: "Describe your ideal weekend and what makes it special to you.",
+    time_limit_sec: 60,
+    eval_focus: ['clarity', 'structure'],
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'guest-2',
+    goal: 'confidence',
+    context: 'everyday',
+    difficulty: 'easy',
+    objective: 'Speak confidently about achievements',
+    prompt_text: "Tell me about a recent accomplishment you're proud of.",
+    time_limit_sec: 60,
+    eval_focus: ['confidence', 'clarity'],
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'guest-3',
+    goal: 'clarity',
+    context: 'social',
+    difficulty: 'easy',
+    objective: 'Explain interests clearly',
+    prompt_text: "Explain your favorite hobby and why you enjoy it.",
+    time_limit_sec: 60,
+    eval_focus: ['clarity', 'structure'],
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'guest-4',
+    goal: 'persuasion',
+    context: 'everyday',
+    difficulty: 'easy',
+    objective: 'Persuasively describe a place',
+    prompt_text: "Describe a place you'd love to visit and why.",
+    time_limit_sec: 60,
+    eval_focus: ['persuasion', 'clarity'],
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'guest-5',
+    goal: 'persuasion',
+    context: 'work',
+    difficulty: 'medium',
+    objective: 'Articulate leadership qualities',
+    prompt_text: "Share your thoughts on what makes a great leader.",
+    time_limit_sec: 60,
+    eval_focus: ['persuasion', 'confidence'],
+    created_at: new Date().toISOString()
+  },
 ]
 
 export default function GuestPracticePage() {
   const router = useRouter()
   const [canPractice, setCanPractice] = useState(true)
-  const [isRecording, setIsRecording] = useState(false)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [showSignupModal, setShowSignupModal] = useState(false)
-  const [sessionScore, setSessionScore] = useState<number | null>(null)
-  const [countdown, setCountdown] = useState(60)
-  const [transcript, setTranscript] = useState('')
-  const [feedback, setFeedback] = useState('')
-  const [currentPrompt, setCurrentPrompt] = useState('')
+  const [scenario, setScenario] = useState<Scenario | null>(null)
+  const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
+  const [recordingDuration, setRecordingDuration] = useState<number>(0)
+  const [isTranscribing, setIsTranscribing] = useState(false)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [transcript, setTranscript] = useState<string | null>(null)
+  const [analysis, setAnalysis] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  // Select random prompt on mount and when restarting
+  // Select random scenario on mount
   useEffect(() => {
-    const randomPrompt = GUEST_PROMPTS[Math.floor(Math.random() * GUEST_PROMPTS.length)]
-    setCurrentPrompt(randomPrompt)
+    const randomScenario = GUEST_SCENARIOS[Math.floor(Math.random() * GUEST_SCENARIOS.length)]
+    setScenario(randomScenario)
   }, [])
 
   useEffect(() => {
@@ -54,114 +100,129 @@ export default function GuestPracticePage() {
     }
   }, [])
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout
+  // Handle recording completion - REAL AI FLOW
+  const handleRecordingComplete = async (blob: Blob, url: string | undefined, duration: number) => {
+    setAudioBlob(blob)
+    setAudioUrl(url || null)
+    setRecordingDuration(duration)
+    setError(null)
 
-    if (isRecording && countdown > 0) {
-      interval = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            handleStopRecording()
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-    }
-
-    return () => clearInterval(interval)
-  }, [isRecording, countdown])
-
-  const handleStartRecording = () => {
-    if (!canPracticeAsGuest()) {
-      toast.error('Daily limit reached!')
+    if (!url) {
+      toast.error('Upload failed. Please try again.')
       return
     }
 
-    setIsRecording(true)
-    setCountdown(60)
-    toast.success('Recording started! Speak clearly.')
+    // Step 1: Transcribe with OpenAI Whisper
+    await handleTranscription(url, duration)
   }
 
-  const handleStopRecording = async () => {
-    setIsRecording(false)
-    setIsProcessing(true)
+  const handleTranscription = async (audioUrl: string, duration: number) => {
+    setIsTranscribing(true)
+    try {
+      const response = await fetch('/api/session/transcribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audioUrl }),
+      })
 
-    // Simulate AI processing (in real app, this would call OpenAI)
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+      if (!response.ok) {
+        throw new Error('Transcription failed')
+      }
 
-    // Mock transcript and scores for guest preview
-    // Note: Guest practice doesn't actually transcribe or analyze
-    // It provides a realistic preview to encourage signup
-    const mockTranscript =
-      'Your response was recorded successfully! This is a preview of how your speech would be transcribed. Sign up for a free account to get real AI-powered transcription and detailed feedback on clarity, confidence, pacing, and more.'
-    
-    // Generate score based on recording duration to feel realistic
-    // Silence or very short recordings get lower scores
-    const recordingDuration = 60 - countdown
-    let mockScore: number
-    
-    if (recordingDuration < 5) {
-      // Very short recording = low score
-      mockScore = Math.random() * 2 + 3 // 3-5/10
-    } else if (recordingDuration < 15) {
-      // Short recording = medium score
-      mockScore = Math.random() * 2 + 5 // 5-7/10
-    } else {
-      // Decent recording = good score
-      mockScore = Math.random() * 2 + 7 // 7-9/10
+      const data = await response.json()
+      setTranscript(data.transcript)
+      toast.success('Transcription complete!')
+
+      // Step 2: Analyze with GPT-4
+      await handleAnalysis(data.transcript, duration)
+    } catch (error: any) {
+      console.error('Transcription error:', error)
+      setError('Transcription failed. Please try again.')
+      toast.error('Transcription failed')
+    } finally {
+      setIsTranscribing(false)
     }
-
-    // Generate feedback based on score
-    let feedbackMessage = ''
-    if (mockScore >= 9.5) {
-      feedbackMessage = 'Outstanding performance! Your communication skills are exceptional. Sign up to unlock detailed AI analysis and track your continued excellence across all metrics.'
-    } else if (mockScore >= 8.5) {
-      feedbackMessage = 'Excellent work! You demonstrated strong communication skills. Sign up to see your detailed scores for clarity, confidence, logic, pacing, and fillers—plus get personalized coaching to reach perfection.'
-    } else if (mockScore >= 7.5) {
-      feedbackMessage = 'Great job! Your communication is solid with room for growth. Sign up to unlock detailed AI analysis including: clarity score, confidence level, pacing feedback, filler word detection, and personalized coaching tips.'
-    } else {
-      feedbackMessage = 'Good effort! You have a foundation to build on. Sign up to unlock detailed feedback on clarity, confidence, pacing, and get personalized coaching tips to improve faster.'
-    }
-
-    setTranscript(mockTranscript)
-    setFeedback(feedbackMessage)
-    setSessionScore(mockScore)
-
-    // Save score and increment usage
-    saveGuestScore({
-      clarity: mockScore,
-      confidence: mockScore,
-      overall: mockScore,
-    })
-    incrementGuestUsage()
-
-    setIsProcessing(false)
-
-    // Don't auto-show modal - let users see results first
-    // They can click signup buttons when ready
-
-    toast.success(`Session complete! Score: ${mockScore.toFixed(1)}/10`)
   }
 
+  const handleAnalysis = async (transcriptText: string, duration: number) => {
+    setIsAnalyzing(true)
+    try {
+      const response = await fetch('/api/session/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transcript: transcriptText,
+          scenarioId: scenario?.id,
+          duration: duration,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Analysis failed')
+      }
+
+      const data = await response.json()
+      setAnalysis(data)
+
+      // Save guest session data
+      const avgScore =
+        (data.scores.clarity + data.scores.confidence + data.scores.logic) / 3
+      
+      saveGuestScore({
+        clarity: data.scores.clarity,
+        confidence: data.scores.confidence,
+        overall: avgScore,
+      })
+      incrementGuestUsage()
+
+      toast.success('Analysis complete!')
+    } catch (error: any) {
+      console.error('Analysis error:', error)
+      setError('Analysis failed. Please try again.')
+      toast.error('Analysis failed')
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
+  const handleTryAgain = () => {
+    if (!canPracticeAsGuest()) {
+      toast.error('Daily limit reached! Sign up for unlimited practice.')
+      router.push('/auth/signup')
+      return
+    }
+
+    // Reset state
+    setAudioUrl(null)
+    setAudioBlob(null)
+    setTranscript(null)
+    setAnalysis(null)
+    setError(null)
+
+    // Get new random scenario
+    const randomScenario = GUEST_SCENARIOS[Math.floor(Math.random() * GUEST_SCENARIOS.length)]
+    setScenario(randomScenario)
+  }
+
+  // Limit reached screen
   if (!canPractice) {
     return (
       <>
         <GuestLimitBanner />
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+        <div className="min-h-screen flex items-center justify-center bg-gray-950 px-4">
           <div className="text-center max-w-md">
             <div className="text-6xl mb-4">⏰</div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Daily Limit Reached
+            <h2 className="text-2xl font-bold text-white mb-4">
+              You've used all 3 free sessions today
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              You've completed 3 practice sessions today. Sign up for unlimited access!
+            <p className="text-gray-300 mb-6">
+              Sign up for unlimited practice and see your detailed scores.
             </p>
             <button
               onClick={() => router.push('/auth/signup')}
-              className="px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors"
+              className="w-full py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity"
             >
-              Create Free Account
+              Sign Up for Unlimited Access
             </button>
           </div>
         </div>
@@ -169,212 +230,213 @@ export default function GuestPracticePage() {
     )
   }
 
-  return (
-    <>
-      <GuestLimitBanner />
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
-        <div className="max-w-2xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-block px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-              Guest Mode • {getRemainingSessionsToday()} sessions left today
+  // Show results with blur overlay (AFTER analysis complete)
+  if (analysis && transcript) {
+    const overallScore = (
+      (analysis.scores.clarity + analysis.scores.confidence + analysis.scores.logic) / 3
+    ).toFixed(1)
+
+    return (
+      <>
+        <GuestLimitBanner />
+        <div className="min-h-screen bg-gray-950 p-4">
+          <div className="max-w-4xl mx-auto">
+            <h1 className="text-3xl font-bold text-white mb-8">Your Practice Results</h1>
+
+            {/* Overall Score - VISIBLE */}
+            <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg p-8 mb-8">
+              <div className="text-center">
+                <div className="text-5xl font-bold text-white mb-2">{overallScore}/10</div>
+                <p className="text-white/90 text-lg">
+                  {parseFloat(overallScore) >= 8.5 ? 'Excellent work!' : 
+                   parseFloat(overallScore) >= 7 ? 'Great job!' : 
+                   'Good effort!'}
+                </p>
+              </div>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Quick Practice</h1>
-            <p className="text-gray-600 dark:text-gray-400">60-second practice session</p>
-          </div>
 
-          {/* Practice Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 mb-6">
-            {!isRecording && !isProcessing && !transcript && (
-              <div className="text-center">
-                <div className="mb-6">
-                  <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Mic className="w-10 h-10 text-blue-500" />
-                  </div>
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                    Ready to practice?
-                  </h2>
-                  <p className="text-gray-600 dark:text-gray-400 mb-6">
-                    Speak for 60 seconds on any topic. We'll give you instant feedback!
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Suggested topic:</p>
-                  <p className="text-lg font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                    {currentPrompt || "Speak about any topic you like!"}
-                  </p>
+            {/* Detailed Scores - BLURRED with CTA Overlay */}
+            <div className="relative mb-8">
+              <div className="filter blur-md pointer-events-none">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+                  {[
+                    { label: 'Clarity', score: analysis.scores.clarity },
+                    { label: 'Confidence', score: analysis.scores.confidence },
+                    { label: 'Logic', score: analysis.scores.logic },
+                  ].map((metric) => (
+                    <div key={metric.label} className="bg-gray-900 rounded-lg p-4">
+                      <h3 className="text-sm text-gray-400 mb-1">{metric.label}</h3>
+                      <div className="text-2xl font-bold text-white">{metric.score}/10</div>
+                    </div>
+                  ))}
                 </div>
 
-                <button
-                  onClick={handleStartRecording}
-                  className="px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white text-lg font-semibold rounded-lg transition-colors"
-                >
-                  Start Recording
-                </button>
-              </div>
-            )}
-
-            {isRecording && (
-              <div className="text-center">
-                <div className="mb-6">
-                  <div className="w-24 h-24 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                    <Mic className="w-12 h-12 text-red-500" />
-                  </div>
-                  <div className="text-5xl font-bold text-gray-900 dark:text-white mb-2">{countdown}s</div>
-                  <p className="text-gray-600 dark:text-gray-400">Recording... Speak clearly!</p>
-                </div>
-
-                <button
-                  onClick={handleStopRecording}
-                  className="px-8 py-4 bg-red-500 hover:bg-red-600 text-white text-lg font-semibold rounded-lg transition-colors flex items-center gap-2 mx-auto"
-                >
-                  <Square className="w-5 h-5" />
-                  Stop Recording
-                </button>
-              </div>
-            )}
-
-            {isProcessing && (
-              <div className="text-center py-12">
-                <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-400">Analyzing your speech...</p>
-              </div>
-            )}
-
-            {transcript && (
-              <div className="space-y-6">
-                {/* Overall Score - Big and Prominent */}
-                <div className="text-center p-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg">
-                  <p className="text-sm text-white/80 mb-2">Your Overall Score</p>
-                  <div className="text-6xl font-bold text-white mb-2">{sessionScore?.toFixed(1)}/10</div>
-                  <p className="text-white/90 text-lg font-medium">
-                    {sessionScore && sessionScore >= 9.5 ? "Outstanding!" : 
-                     sessionScore && sessionScore >= 8.5 ? "Excellent!" : 
-                     sessionScore && sessionScore >= 7.5 ? "Great job!" : 
-                     "Good effort!"}
-                  </p>
-                </div>
-
-                {/* Basic Feedback */}
-                <div className="bg-white dark:bg-gray-700 p-6 rounded-xl border border-gray-200 dark:border-gray-600">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                    <span className="text-2xl">💬</span>
-                    Quick Feedback
+                {/* AI Feedback - First line visible, rest blurred */}
+                <div className="bg-gray-900 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4">
+                    <Sparkles className="w-5 h-5 inline mr-2" />
+                    AI Coach Feedback
                   </h3>
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{feedback}</p>
-                </div>
-
-                {/* Locked Detailed Scores Preview - Clickable */}
-                <div 
-                  onClick={() => setShowSignupModal(true)}
-                  className="relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 p-6 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 cursor-pointer hover:border-blue-400 dark:hover:border-blue-600 transition-colors"
-                >
-                  <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                    <div className="text-center px-4 py-6">
-                      <div className="text-4xl mb-3">🔒</div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                        Unlock Detailed Analysis
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs mx-auto">
-                        See detailed scores for Clarity, Confidence, Logic, Pacing, and Fillers
-                      </p>
+                  <p className="text-gray-300 mb-4">{analysis.summary}</p>
+                  <div className="space-y-3">
+                    <div className="bg-gray-800 rounded-lg p-4">
+                      <h4 className="font-semibold text-white mb-2">✓ Strengths</h4>
+                      <ul className="space-y-1">
+                        {analysis.strengths.map((s: string, i: number) => (
+                          <li key={i} className="text-gray-300">• {s}</li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
-                  {/* Blurred preview of detailed scores */}
-                  <div className="opacity-30 pointer-events-none">
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Your Detailed Scores</h3>
-                    <div className="grid grid-cols-5 gap-2">
-                      {['Clarity', 'Confidence', 'Logic', 'Pacing', 'Fillers'].map((metric) => (
-                        <div key={metric} className="text-center">
-                          <div className="w-12 h-12 rounded-full bg-blue-500 mx-auto mb-1"></div>
-                          <p className="text-xs font-medium">{metric}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Locked Coaching Tips Preview - Clickable */}
-                <div 
-                  onClick={() => setShowSignupModal(true)}
-                  className="relative bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-6 rounded-xl border-2 border-dashed border-purple-300 dark:border-purple-700 cursor-pointer hover:border-purple-400 dark:hover:border-purple-600 transition-colors"
-                >
-                  <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                    <div className="text-center px-4 py-6">
-                      <div className="text-4xl mb-3">🎯</div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                        Personalized Coaching Tips
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs mx-auto">
-                        Get AI-powered tips tailored to your communication style
-                      </p>
-                    </div>
-                  </div>
-                  {/* Blurred preview */}
-                  <div className="opacity-20 pointer-events-none">
-                    <h3 className="font-semibold mb-3">💡 Personalized Tips</h3>
-                    <div className="space-y-2">
-                      <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
-                      <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-5/6"></div>
-                      <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-4/6"></div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Limited Sessions Notice */}
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                  <p className="text-sm text-yellow-900 dark:text-yellow-300 mb-1 font-medium">
-                    ⚡ {3 - (getRemainingSessionsToday())} of 3 free sessions used today
-                  </p>
-                  <p className="text-xs text-yellow-800 dark:text-yellow-400">
-                    Sign up for unlimited practice sessions and detailed feedback!
-                  </p>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="space-y-3">
-                  {/* Primary CTA - Sign Up */}
-                  <button
-                    onClick={() => setShowSignupModal(true)}
-                    className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold rounded-lg transition-all shadow-lg text-lg"
-                  >
-                    🎯 Unlock Full Analysis & Coaching
-                  </button>
-                  
-                  {/* Secondary CTA - Try Another */}
-                  {getRemainingSessionsToday() > 0 && (
-                    <button
-                      onClick={() => {
-                        if (canPracticeAsGuest()) {
-                          // Reset state
-                          setTranscript('')
-                          setFeedback('')
-                          setSessionScore(null)
-                          setCountdown(60)
-                          // Get new random prompt
-                          const randomPrompt = GUEST_PROMPTS[Math.floor(Math.random() * GUEST_PROMPTS.length)]
-                          setCurrentPrompt(randomPrompt)
-                        } else {
-                          toast.error('Daily limit reached! Sign up for unlimited practice.')
-                          setShowSignupModal(true)
-                        }
-                      }}
-                      className="w-full px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      Try Another Practice ({getRemainingSessionsToday()} left)
-                    </button>
-                  )}
                 </div>
               </div>
+
+              {/* Overlay CTA */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="bg-gray-950/95 border-2 border-purple-500/50 rounded-xl p-8 max-w-md mx-auto text-center">
+                  <Lock className="w-12 h-12 text-purple-400 mx-auto mb-4" />
+                  <h2 className="text-2xl font-bold text-white mb-4">
+                    Want to see your detailed analysis?
+                  </h2>
+                  <p className="text-gray-300 mb-6 text-left">
+                    <span className="block mb-2">Sign up free to unlock:</span>
+                    <span className="block">• Individual skill scores</span>
+                    <span className="block">• Personalized AI coaching</span>
+                    <span className="block">• Progress tracking</span>
+                    <span className="block">• Unlimited practice sessions</span>
+                  </p>
+
+                  <button
+                    onClick={() => router.push('/auth/signup')}
+                    className="w-full py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity mb-3"
+                  >
+                    Sign Up Free - See Full Analysis
+                  </button>
+
+                  <button
+                    onClick={() => router.push('/auth/login')}
+                    className="text-gray-400 hover:text-white transition-colors text-sm"
+                  >
+                    Already have an account? Sign in
+                  </button>
+
+                  {/* Sessions remaining */}
+                  <p className="text-sm text-gray-500 mt-4">
+                    {getRemainingSessionsToday()} free sessions remaining today
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Try Again Button */}
+            {getRemainingSessionsToday() > 0 && (
+              <button
+                onClick={handleTryAgain}
+                className="w-full py-3 border-2 border-gray-700 text-gray-300 font-semibold rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                Try Another Practice ({getRemainingSessionsToday()} left)
+              </button>
             )}
           </div>
         </div>
-      </div>
+      </>
+    )
+  }
 
-      {/* Signup Modal */}
-      <SignupPromptModal
-        score={sessionScore || undefined}
-        isOpen={showSignupModal}
-        onClose={() => setShowSignupModal(false)}
-      />
+  // Main practice interface
+  return (
+    <>
+      <GuestLimitBanner />
+      <div className="min-h-screen bg-gray-950 p-4">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex justify-between items-center">
+              <h1 className="text-2xl font-bold text-white">Guest Practice</h1>
+              <div className="bg-gray-900 rounded-lg px-4 py-2">
+                <span className="text-gray-400">{getRemainingSessionsToday()} sessions left today</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Scenario Card */}
+          {scenario && !analysis && (
+            <div className="bg-gray-900 rounded-lg p-6 mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="bg-purple-500/20 text-purple-400 px-3 py-1 rounded-full text-sm">
+                  {scenario.difficulty}
+                </span>
+                <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm">
+                  {scenario.context}
+                </span>
+                <span className="text-gray-400">60 seconds</span>
+              </div>
+
+              <h2 className="text-xl font-semibold text-white mb-3">Your Challenge:</h2>
+              <p className="text-gray-300 text-lg mb-4">{scenario.prompt_text}</p>
+
+              <div className="bg-gray-800/50 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-gray-400 mb-2">Tips:</h3>
+                <ul className="space-y-1 text-sm text-gray-300">
+                  <li>• Start with a clear opening statement</li>
+                  <li>• Use specific examples</li>
+                  <li>• End with a strong conclusion</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Voice Recorder - REAL RECORDING */}
+          {!analysis && scenario && (
+            <VoiceRecorder
+              onRecordingComplete={handleRecordingComplete}
+              maxDuration={60}
+              autoUpload={true}
+            />
+          )}
+
+          {/* Loading States */}
+          {(isTranscribing || isAnalyzing) && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-gray-900 rounded-lg p-8 text-center">
+                <Loader2 className="w-12 h-12 text-purple-500 animate-spin mx-auto mb-4" />
+                <p className="text-white text-lg">
+                  {isTranscribing ? 'Transcribing your speech...' : 'Analyzing with AI...'}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4">
+              <p className="text-red-400">{error}</p>
+              <button
+                onClick={handleTryAgain}
+                className="mt-2 text-red-300 hover:text-red-200 text-sm underline"
+              >
+                Try Again
+              </button>
+            </div>
+          )}
+
+          {/* Sign up prompt for non-results page */}
+          {!analysis && (
+            <div className="mt-12 bg-gray-900 rounded-lg p-6 text-center">
+              <h3 className="text-lg font-semibold text-white mb-2">Want unlimited practice?</h3>
+              <p className="text-gray-400 mb-4">
+                Sign up free to track your progress and get detailed feedback.
+              </p>
+              <button
+                onClick={() => router.push('/auth/signup')}
+                className="text-purple-400 hover:text-purple-300 transition-colors"
+              >
+                Create free account →
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </>
   )
 }
