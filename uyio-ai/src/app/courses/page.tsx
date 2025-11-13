@@ -277,7 +277,7 @@ export default function CoursesPage() {
             <div className="relative group">
               <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800 group-hover:border-purple-500/30 transition-colors">
                 <img 
-                  src="/screenshots/progress-dashboard.png" 
+                  src="/screenshots/progress-dashboard.png?v=2" 
                   alt="Uyio AI Progress Dashboard"
                   className="w-full h-auto"
                   loading="lazy"
@@ -291,7 +291,7 @@ export default function CoursesPage() {
             <div className="relative group">
               <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800 group-hover:border-purple-500/30 transition-colors">
                 <img 
-                  src="/screenshots/practice-scenario.png" 
+                  src="/screenshots/practice-scenario.png?v=2" 
                   alt="Uyio AI Practice Scenario"
                   className="w-full h-auto"
                   loading="lazy"
@@ -305,7 +305,7 @@ export default function CoursesPage() {
             <div className="relative group">
               <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800 group-hover:border-purple-500/30 transition-colors">
                 <img 
-                  src="/screenshots/feedback-results.png" 
+                  src="/screenshots/feedback-results.png?v=2" 
                   alt="Uyio AI Feedback Results"
                   className="w-full h-auto"
                   loading="lazy"
