@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { createBrowserClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 
 // Metadata is handled in layout.tsx for client components
 // Title: 7-Day Speaking Confidence Course | Uyio AI
@@ -19,7 +19,7 @@ export default function CoursesPage() {
     setError('')
     
     try {
-      const supabase = createBrowserClient()
+      const supabase = createClient()
       const { error: insertError } = await supabase
         .from('course_waitlist')
         .insert([{ email }])
