@@ -26,12 +26,12 @@ FOR INSERT
 TO public
 WITH CHECK (true);
 
--- Policy: Only authenticated users can view waitlist (for admin purposes)
-CREATE POLICY "Authenticated users can view waitlist"
-ON course_waitlist
-FOR SELECT
-TO authenticated
-USING (true);
+-- NO SELECT POLICY
+-- This means only the database owner (you) can view the waitlist.
+-- Regular users cannot query this table, protecting privacy.
+-- You can view waitlist entries in:
+-- 1. Supabase Dashboard → Table Editor → course_waitlist
+-- 2. Supabase SQL Editor → SELECT * FROM course_waitlist;
 
 -- ============================================================================
 -- VERIFICATION QUERY
