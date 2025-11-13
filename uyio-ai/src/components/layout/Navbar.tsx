@@ -61,11 +61,6 @@ export function Navbar() {
                 >
                   {Icon && <Icon className="w-4 h-4" />}
                   {link.label}
-                  {link.badge && (
-                    <Badge variant="info" size="sm">
-                      {link.badge}
-                    </Badge>
-                  )}
                 </Link>
               )
             })}

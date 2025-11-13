@@ -130,11 +130,6 @@ export function MobileNav() {
                   >
                     <Icon className="w-5 h-5" />
                     <span>{item.label}</span>
-                    {item.badge && (
-                      <Badge variant="info" size="sm" className="ml-auto">
-                        {item.badge}
-                      </Badge>
-                    )}
                   </Link>
                 )
               })}
