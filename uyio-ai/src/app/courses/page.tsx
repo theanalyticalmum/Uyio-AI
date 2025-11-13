@@ -283,7 +283,7 @@ export default function CoursesPage() {
             This course doesn&apos;t teach communication — it transforms it.
           </p>
 
-          {/* NEW: Product Screenshots */}
+          {/* Product Screenshots */}
           <div className="space-y-6">
             <div className="relative group">
               <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800 group-hover:border-purple-500/30 transition-colors">
