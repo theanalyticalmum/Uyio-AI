@@ -113,14 +113,28 @@ export default function GuestPracticePage() {
   const handleTranscription = async (audioBlob: Blob, duration: number) => {
     setIsTranscribing(true)
     try {
+      console.log('🎤 Starting guest transcription:', {
+        blobSize: audioBlob.size,
+        blobType: audioBlob.type,
+        duration,
+      })
+
       // Convert blob to File for upload
       const audioFile = new File([audioBlob], 'guest-recording.webm', {
-        type: audioBlob.type,
+        type: audioBlob.type || 'audio/webm',
+      })
+
+      console.log('📁 Created audio file:', {
+        name: audioFile.name,
+        type: audioFile.type,
+        size: audioFile.size,
       })
 
       // Create FormData for file upload
       const formData = new FormData()
       formData.append('audio', audioFile)
+
+      console.log('📤 Sending to transcription API...')
 
       // Send directly to transcription API (guests skip storage)
       const response = await fetch('/api/session/transcribe', {
@@ -128,20 +142,34 @@ export default function GuestPracticePage() {
         body: formData, // Send file directly, not JSON
       })
 
+      console.log('📥 Transcription response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+      })
+
       if (!response.ok) {
-        throw new Error('Transcription failed')
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('❌ Transcription failed:', errorData)
+        throw new Error(errorData.error || `Transcription failed: ${response.statusText}`)
       }
 
       const data = await response.json()
+      console.log('✅ Transcription successful:', {
+        transcriptLength: data.transcript?.length,
+        wordCount: data.wordCount,
+      })
+
       setTranscript(data.transcript)
       toast.success('Transcription complete!')
 
       // Step 2: Analyze with GPT-4
       await handleAnalysis(data.transcript, duration)
     } catch (error: any) {
-      console.error('Transcription error:', error)
-      setError('Transcription failed. Please try again.')
-      toast.error('Transcription failed')
+      console.error('❌ Transcription error:', error)
+      const errorMessage = error?.message || 'Transcription failed. Please try again.'
+      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setIsTranscribing(false)
     }
@@ -150,6 +178,12 @@ export default function GuestPracticePage() {
   const handleAnalysis = async (transcriptText: string, duration: number) => {
     setIsAnalyzing(true)
     try {
+      console.log('🤖 Starting AI analysis:', {
+        transcriptLength: transcriptText.length,
+        scenarioId: scenario?.id,
+        duration,
+      })
+
       const response = await fetch('/api/session/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -160,14 +194,29 @@ export default function GuestPracticePage() {
         }),
       })
 
+      console.log('📥 Analysis response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+      })
+
       if (!response.ok) {
-        throw new Error('Analysis failed')
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('❌ Analysis failed:', errorData)
+        throw new Error(errorData.error || `Analysis failed: ${response.statusText}`)
       }
 
       const data = await response.json()
+      console.log('✅ Analysis successful:', {
+        hasScores: !!data.scores,
+        clarity: data.scores?.clarity,
+        confidence: data.scores?.confidence,
+        logic: data.scores?.logic,
+      })
+
       setAnalysis(data)
 
-      // Save guest session data
+      // Save guest session data (localStorage only)
       const avgScore =
         (data.scores.clarity + data.scores.confidence + data.scores.logic) / 3
       
@@ -178,11 +227,13 @@ export default function GuestPracticePage() {
       })
       incrementGuestUsage()
 
+      console.log('💾 Guest session saved to localStorage')
       toast.success('Analysis complete!')
     } catch (error: any) {
-      console.error('Analysis error:', error)
-      setError('Analysis failed. Please try again.')
-      toast.error('Analysis failed')
+      console.error('❌ Analysis error:', error)
+      const errorMessage = error?.message || 'Analysis failed. Please try again.'
+      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setIsAnalyzing(false)
     }
