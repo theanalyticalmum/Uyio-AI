@@ -208,11 +208,27 @@ export default function GuestPracticePage() {
 
       const data = await response.json()
       console.log('✅ Analysis successful:', {
+        fullData: data,
         hasScores: !!data.scores,
         clarity: data.scores?.clarity,
         confidence: data.scores?.confidence,
         logic: data.scores?.logic,
       })
+
+      // Validate that we have the expected data structure
+      if (!data.scores || typeof data.scores !== 'object') {
+        console.error('❌ Invalid analysis response structure:', data)
+        throw new Error('Invalid analysis response: missing scores object')
+      }
+
+      if (
+        typeof data.scores.clarity !== 'number' ||
+        typeof data.scores.confidence !== 'number' ||
+        typeof data.scores.logic !== 'number'
+      ) {
+        console.error('❌ Invalid score values:', data.scores)
+        throw new Error('Invalid analysis response: scores must be numbers')
+      }
 
       setAnalysis(data)
 
