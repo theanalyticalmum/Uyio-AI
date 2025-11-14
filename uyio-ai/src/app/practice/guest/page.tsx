@@ -207,38 +207,48 @@ export default function GuestPracticePage() {
       }
 
       const data = await response.json()
-      console.log('✅ Analysis successful:', {
-        fullData: data,
-        hasScores: !!data.scores,
-        clarity: data.scores?.clarity,
-        confidence: data.scores?.confidence,
-        logic: data.scores?.logic,
+      console.log('✅ Analysis successful - RAW DATA:', JSON.stringify(data, null, 2))
+      console.log('✅ Analysis successful - PARSED:', {
+        hasFeedback: !!data.feedback,
+        hasScores: !!data.feedback?.scores,
+        scoresType: typeof data.feedback?.scores,
+        clarity: data.feedback?.scores?.clarity,
+        confidence: data.feedback?.scores?.confidence,
+        logic: data.feedback?.scores?.logic,
+        allKeys: Object.keys(data),
       })
 
       // Validate that we have the expected data structure
-      if (!data.scores || typeof data.scores !== 'object') {
-        console.error('❌ Invalid analysis response structure:', data)
+      // API returns: { success, feedback: { scores, coaching, summary }, overallScore }
+      if (!data.feedback || typeof data.feedback !== 'object') {
+        console.error('❌ Invalid analysis response: missing feedback object', data)
+        throw new Error('Invalid analysis response: missing feedback object')
+      }
+
+      if (!data.feedback.scores || typeof data.feedback.scores !== 'object') {
+        console.error('❌ Invalid analysis response: missing scores in feedback', data.feedback)
         throw new Error('Invalid analysis response: missing scores object')
       }
 
       if (
-        typeof data.scores.clarity !== 'number' ||
-        typeof data.scores.confidence !== 'number' ||
-        typeof data.scores.logic !== 'number'
+        typeof data.feedback.scores.clarity !== 'number' ||
+        typeof data.feedback.scores.confidence !== 'number' ||
+        typeof data.feedback.scores.logic !== 'number'
       ) {
-        console.error('❌ Invalid score values:', data.scores)
+        console.error('❌ Invalid score values:', data.feedback.scores)
         throw new Error('Invalid analysis response: scores must be numbers')
       }
 
-      setAnalysis(data)
+      // Store the feedback object (which contains scores, coaching, summary)
+      setAnalysis(data.feedback)
 
       // Save guest session data (localStorage only)
       const avgScore =
-        (data.scores.clarity + data.scores.confidence + data.scores.logic) / 3
+        (data.feedback.scores.clarity + data.feedback.scores.confidence + data.feedback.scores.logic) / 3
       
       saveGuestScore({
-        clarity: data.scores.clarity,
-        confidence: data.scores.confidence,
+        clarity: data.feedback.scores.clarity,
+        confidence: data.feedback.scores.confidence,
         overall: avgScore,
       })
       incrementGuestUsage()
