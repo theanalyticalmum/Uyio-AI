@@ -100,29 +100,32 @@ export default function GuestPracticePage() {
     }
   }, [])
 
-  // Handle recording completion - REAL AI FLOW
+  // Handle recording completion - GUEST FLOW (no storage upload)
   const handleRecordingComplete = async (blob: Blob, url: string | undefined, duration: number) => {
     setAudioBlob(blob)
-    setAudioUrl(url || null)
     setRecordingDuration(duration)
     setError(null)
 
-    if (!url) {
-      toast.error('Upload failed. Please try again.')
-      return
-    }
-
-    // Step 1: Transcribe with OpenAI Whisper
-    await handleTranscription(url, duration)
+    // Guests skip storage - send blob directly to transcription
+    await handleTranscription(blob, duration)
   }
 
-  const handleTranscription = async (audioUrl: string, duration: number) => {
+  const handleTranscription = async (audioBlob: Blob, duration: number) => {
     setIsTranscribing(true)
     try {
+      // Convert blob to File for upload
+      const audioFile = new File([audioBlob], 'guest-recording.webm', {
+        type: audioBlob.type,
+      })
+
+      // Create FormData for file upload
+      const formData = new FormData()
+      formData.append('audio', audioFile)
+
+      // Send directly to transcription API (guests skip storage)
       const response = await fetch('/api/session/transcribe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audioUrl }),
+        body: formData, // Send file directly, not JSON
       })
 
       if (!response.ok) {
@@ -386,12 +389,12 @@ export default function GuestPracticePage() {
             </div>
           )}
 
-          {/* Voice Recorder - REAL RECORDING */}
+          {/* Voice Recorder - REAL RECORDING (guests skip storage upload) */}
           {!analysis && scenario && (
             <VoiceRecorder
               onRecordingComplete={handleRecordingComplete}
               maxDuration={60}
-              autoUpload={true}
+              autoUpload={false}
             />
           )}
 

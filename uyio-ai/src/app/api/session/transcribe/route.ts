@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { transcribeAudio } from '@/lib/openai/transcribe'
+import { transcribeAudio, transcribeFromBlob } from '@/lib/openai/transcribe'
 import { strictRateLimit, getIdentifier, formatResetTime } from '@/lib/rateLimit'
 
 export async function POST(request: Request) {
@@ -23,29 +23,52 @@ export async function POST(request: Request) {
       )
     }
 
-    const body = await request.json()
-    const { audioUrl } = body
+    // Check if request is FormData (guest upload) or JSON (authenticated user)
+    const contentType = request.headers.get('content-type') || ''
+    
+    let result
 
-    // Validate input
-    if (!audioUrl || typeof audioUrl !== 'string') {
-      return NextResponse.json(
-        { error: 'Missing or invalid audioUrl' },
-        { status: 400 }
-      )
+    if (contentType.includes('multipart/form-data')) {
+      // GUEST FLOW: Handle file upload directly
+      const formData = await request.formData()
+      const audioFile = formData.get('audio') as File
+      
+      if (!audioFile) {
+        return NextResponse.json(
+          { error: 'Missing audio file' },
+          { status: 400 }
+        )
+      }
+
+      // Convert File to Blob for transcription
+      const audioBlob = new Blob([await audioFile.arrayBuffer()], { type: audioFile.type })
+      result = await transcribeFromBlob(audioBlob)
+    } else {
+      // AUTHENTICATED FLOW: Handle audio URL from storage
+      const body = await request.json()
+      const { audioUrl } = body
+
+      // Validate input
+      if (!audioUrl || typeof audioUrl !== 'string') {
+        return NextResponse.json(
+          { error: 'Missing or invalid audioUrl' },
+          { status: 400 }
+        )
+      }
+
+      // Validate URL format
+      try {
+        new URL(audioUrl)
+      } catch {
+        return NextResponse.json(
+          { error: 'Invalid audio URL format' },
+          { status: 400 }
+        )
+      }
+
+      // Transcribe the audio
+      result = await transcribeAudio(audioUrl)
     }
-
-    // Validate URL format
-    try {
-      new URL(audioUrl)
-    } catch {
-      return NextResponse.json(
-        { error: 'Invalid audio URL format' },
-        { status: 400 }
-      )
-    }
-
-    // Transcribe the audio
-    const result = await transcribeAudio(audioUrl)
 
     return NextResponse.json({
       success: true,
