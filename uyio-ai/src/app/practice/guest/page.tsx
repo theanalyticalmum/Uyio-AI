@@ -113,39 +113,19 @@ export default function GuestPracticePage() {
   const handleTranscription = async (audioBlob: Blob, duration: number) => {
     setIsTranscribing(true)
     try {
-      console.log('🎤 Starting guest transcription:', {
-        blobSize: audioBlob.size,
-        blobType: audioBlob.type,
-        duration,
-      })
-
       // Convert blob to File for upload
       const audioFile = new File([audioBlob], 'guest-recording.webm', {
         type: audioBlob.type || 'audio/webm',
-      })
-
-      console.log('📁 Created audio file:', {
-        name: audioFile.name,
-        type: audioFile.type,
-        size: audioFile.size,
       })
 
       // Create FormData for file upload
       const formData = new FormData()
       formData.append('audio', audioFile)
 
-      console.log('📤 Sending to transcription API...')
-
       // Send directly to transcription API (guests skip storage)
       const response = await fetch('/api/session/transcribe', {
         method: 'POST',
         body: formData, // Send file directly, not JSON
-      })
-
-      console.log('📥 Transcription response:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
       })
 
       if (!response.ok) {
@@ -155,11 +135,6 @@ export default function GuestPracticePage() {
       }
 
       const data = await response.json()
-      console.log('✅ Transcription successful:', {
-        transcriptLength: data.transcript?.length,
-        wordCount: data.wordCount,
-      })
-
       setTranscript(data.transcript)
       toast.success('Transcription complete!')
 
@@ -178,12 +153,6 @@ export default function GuestPracticePage() {
   const handleAnalysis = async (transcriptText: string, duration: number) => {
     setIsAnalyzing(true)
     try {
-      console.log('🤖 Starting AI analysis:', {
-        transcriptLength: transcriptText.length,
-        scenarioId: scenario?.id,
-        duration,
-      })
-
       const response = await fetch('/api/session/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -194,39 +163,24 @@ export default function GuestPracticePage() {
         }),
       })
 
-      console.log('📥 Analysis response:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-      })
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('❌ Analysis failed:', errorData)
+        console.error('❌ Analysis failed')
         throw new Error(errorData.error || `Analysis failed: ${response.statusText}`)
       }
 
       const data = await response.json()
-      console.log('✅ Analysis successful - RAW DATA:', JSON.stringify(data, null, 2))
-      console.log('✅ Analysis successful - PARSED:', {
-        hasFeedback: !!data.feedback,
-        hasScores: !!data.feedback?.scores,
-        scoresType: typeof data.feedback?.scores,
-        clarity: data.feedback?.scores?.clarity,
-        confidence: data.feedback?.scores?.confidence,
-        logic: data.feedback?.scores?.logic,
-        allKeys: Object.keys(data),
-      })
+      // Note: Detailed logging removed to prevent guests from bypassing blur overlay via console
 
       // Validate that we have the expected data structure
       // API returns: { success, feedback: { scores, coaching, summary }, overallScore }
       if (!data.feedback || typeof data.feedback !== 'object') {
-        console.error('❌ Invalid analysis response: missing feedback object', data)
+        console.error('❌ Invalid analysis response structure')
         throw new Error('Invalid analysis response: missing feedback object')
       }
 
       if (!data.feedback.scores || typeof data.feedback.scores !== 'object') {
-        console.error('❌ Invalid analysis response: missing scores in feedback', data.feedback)
+        console.error('❌ Invalid analysis response structure')
         throw new Error('Invalid analysis response: missing scores object')
       }
 
@@ -235,7 +189,7 @@ export default function GuestPracticePage() {
         typeof data.feedback.scores.confidence !== 'number' ||
         typeof data.feedback.scores.logic !== 'number'
       ) {
-        console.error('❌ Invalid score values:', data.feedback.scores)
+        console.error('❌ Invalid score values')
         throw new Error('Invalid analysis response: scores must be numbers')
       }
 
@@ -253,7 +207,6 @@ export default function GuestPracticePage() {
       })
       incrementGuestUsage()
 
-      console.log('💾 Guest session saved to localStorage')
       toast.success('Analysis complete!')
     } catch (error: any) {
       console.error('❌ Analysis error:', error)
